@@ -1,0 +1,3518 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LINEUP BUILDER</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pitch: #2a5c14;
+  --panel: #0c0c0c;
+  --panel-mid: #161616;
+  --panel-border: #262626;
+  --accent: #c8f560;
+  --accent2: #60d5f5;
+  --text: #f0f0e8;
+  --text-dim: #666;
+  --danger: #f56060;
+  --warn: #f5a623;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--panel);color:var(--text);font-family:'Noto Sans JP',sans-serif;height:100vh;max-height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* HEADER */
+header{background:#080808;border-bottom:1px solid var(--panel-border);padding:10px 20px;display:flex;align-items:center;gap:16px;flex-shrink:0;z-index:10;}
+header h1{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:4px;color:var(--accent);}
+header .subtitle{font-size:0.68rem;color:var(--text-dim);letter-spacing:2px;}
+header .spacer{flex:1;}
+.header-btn{background:#1a1a1a;border:1px solid var(--panel-border);color:var(--text-dim);padding:6px 14px;font-size:0.75rem;font-family:'Noto Sans JP',sans-serif;cursor:pointer;border-radius:4px;transition:all .15s;}
+.header-btn:hover{border-color:var(--accent);color:var(--accent);}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:290px 1fr 260px;flex:1;min-height:0;max-height:calc(100vh - 53px);overflow:hidden;}
+
+/* ── RESPONSIVE: MOBILE ── */
+@media (max-width: 768px) {
+  body{height:auto;max-height:none;overflow:auto;}
+  header{padding:8px 12px;}
+  header h1{font-size:1.3rem;letter-spacing:2px;}
+  .header-btn{padding:5px 9px;font-size:0.65rem;}
+
+  /* Mobile: 縦積みレイアウト */
+  .app{display:flex;flex-direction:column;max-height:none;height:auto;overflow:visible;}
+
+  /* Left panel: collapsible sections */
+  .left-panel{height:auto;overflow:visible;border-right:none;border-bottom:1px solid var(--panel-border);order:1;}
+  .panel-section{padding:7px 10px;}
+  .formation-grid{grid-template-columns:repeat(4,1fr);max-height:none;gap:3px;}
+  .formation-btn{font-size:0.72rem;padding:4px 1px;}
+  .player-list-wrap{max-height:160px;overflow-y:auto;}
+  .custom-panel{max-height:200px;}
+  .custom-tab-content.active{max-height:110px;}
+
+  /* Pitch: ほぼフルスクリーン */
+  .pitch-area{order:2;height:calc(100vw * 11/7);max-height:94vw;min-height:0;}
+  .pitch-wrap{width:min(100%, calc(100vw * 7/11));height:min(100%, 94vw);margin:auto;}
+  .pp-icon{width:46px;height:46px;}
+  .pp-label{font-size:0.60rem;max-width:66px;padding:2px 5px;}
+  .pp-badge{width:15px;height:15px;font-size:0.60rem;}
+  .pp-remove{display:flex;width:16px;height:16px;font-size:0.6rem;}
+
+  /* Right panel */
+  .right-panel{height:auto;overflow:visible;border-left:none;border-top:1px solid var(--panel-border);order:3;}
+  .lineup-scroll{max-height:300px;overflow-y:auto;}
+  .ls-icon{width:38px;height:38px;}
+  .ls-name{font-size:0.76rem;}
+  .lineup-actions{flex-direction:row;flex-wrap:wrap;gap:4px;padding:8px;}
+  .btn-full{font-size:.78rem;padding:8px 4px;flex:1;min-width:0;letter-spacing:.5px;}
+  .modal{width:96vw;max-height:82vh;}
+}
+@media (max-width: 480px) {
+  header h1{font-size:1.1rem;}
+  .formation-grid{grid-template-columns:repeat(3,1fr);}
+  .pitch-area{height:calc(100vw * 11/7);max-height:98vw;}
+  .pp-icon{width:40px;height:40px;}
+  .pp-label{font-size:0.55rem;max-width:56px;}
+}
+
+/* PANELS */
+.left-panel{background:var(--panel-mid);border-right:1px solid var(--panel-border);display:flex;flex-direction:column;overflow:hidden;height:100%;}
+.right-panel{background:var(--panel-mid);border-left:1px solid var(--panel-border);display:flex;flex-direction:column;overflow:hidden;height:100%;}
+.panel-section{padding:12px 14px;border-bottom:1px solid var(--panel-border);flex-shrink:0;}
+.panel-label{font-size:0.6rem;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:8px;font-weight:700;}
+.panel-label-sm{font-size:0.6rem;letter-spacing:2px;color:var(--text-dim);text-transform:uppercase;margin-bottom:6px;}
+
+select,input[type=text]{width:100%;background:#0e0e0e;border:1px solid var(--panel-border);color:var(--text);padding:7px 10px;font-family:'Noto Sans JP',sans-serif;font-size:0.82rem;border-radius:4px;outline:none;transition:border-color .2s;}
+select:focus,input:focus{border-color:var(--accent);}
+select option{background:#111;}
+
+/* FORMATION GRID */
+.formation-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-top:6px;max-height:180px;overflow-y:auto;}
+.formation-btn{background:#0e0e0e;border:1px solid var(--panel-border);color:var(--text-dim);padding:5px 2px;font-family:'Bebas Neue',sans-serif;font-size:0.82rem;letter-spacing:0.5px;cursor:pointer;border-radius:4px;transition:all .15s;text-align:center;}
+.formation-btn:hover{border-color:var(--accent);color:var(--accent);}
+.formation-btn.active{background:var(--accent);color:#000;border-color:var(--accent);}
+
+/* TEAM SELECT ROW */
+.team-select-row{display:flex;gap:6px;}
+.team-select-row select{flex:1;}
+
+/* PLAYER LIST */
+.player-list-wrap{flex:1;overflow-y:auto;padding:6px;min-height:0;}
+.player-list-wrap::-webkit-scrollbar{width:3px;}
+.player-list-wrap::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px;}
+.player-search-input{margin-bottom:6px;}
+
+.player-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s;margin-bottom:2px;position:relative;}
+.player-item:hover{background:#202020;}
+.player-item.in-lineup{opacity:.4;cursor:default;}
+.player-item.in-lineup:hover{background:transparent;}
+.p-avatar{width:34px;height:34px;border-radius:50%;background:#1e1e1e;border:2px solid #2a2a2a;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:0.9rem;}
+.p-avatar img{width:100%;height:100%;object-fit:cover;}
+.p-info{flex:1;min-width:0;}
+.p-name{font-size:0.82rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.p-meta{font-size:0.68rem;color:var(--text-dim);}
+.p-num{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--text-dim);width:20px;text-align:center;flex-shrink:0;}
+.p-del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:0.8rem;padding:2px 4px;opacity:0;transition:opacity .15s;}
+.player-item:hover .p-del{opacity:1;}
+
+/* CUSTOM PLAYER PANEL */
+.custom-panel{padding:12px 14px;border-bottom:1px solid var(--panel-border);flex-shrink:0;overflow:hidden;max-height:260px;}
+.custom-tabs{display:flex;gap:4px;margin-bottom:10px;}
+.custom-tab{flex:1;background:#0e0e0e;border:1px solid var(--panel-border);color:var(--text-dim);padding:5px;font-size:0.72rem;font-family:'Noto Sans JP',sans-serif;cursor:pointer;border-radius:3px;text-align:center;transition:all .15s;}
+.custom-tab.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.custom-tab-content{display:none;}
+.custom-tab-content.active{display:block;max-height:160px;overflow-y:auto;}
+.search-row{display:flex;gap:5px;margin-bottom:6px;}
+.search-row input{flex:1;}
+.btn-xs{background:var(--accent);color:#000;border:none;padding:6px 10px;font-family:'Noto Sans JP',sans-serif;font-size:0.72rem;font-weight:700;cursor:pointer;border-radius:3px;white-space:nowrap;transition:opacity .2s;flex-shrink:0;}
+.btn-xs:hover{opacity:.85;}
+.btn-xs.sec{background:#2a2a2a;color:var(--text);}
+.btn-xs.danger{background:var(--danger);color:#fff;}
+.img-results{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;max-height:120px;overflow-y:auto;}
+.img-cand{width:44px;height:44px;border-radius:4px;object-fit:cover;cursor:pointer;border:2px solid transparent;transition:border-color .15s;background:#1a1a1a;display:block;}
+.img-cand:hover,.img-cand.picked{border-color:var(--accent);}
+.custom-note{font-size:0.68rem;color:var(--text-dim);margin-top:4px;line-height:1.4;}
+.custom-preview-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+.custom-preview-row .p-avatar{width:40px;height:40px;}
+.custom-form-row{display:grid;grid-template-columns:1fr auto auto;gap:5px;margin-top:6px;}
+.upload-label{display:inline-flex;align-items:center;gap:4px;background:#2a2a2a;color:var(--text-dim);padding:6px 10px;border-radius:3px;cursor:pointer;font-size:0.72rem;font-family:'Noto Sans JP',sans-serif;border:1px solid var(--panel-border);transition:all .15s;}
+.upload-label:hover{border-color:var(--accent);color:var(--accent);}
+input[type=file]{display:none;}
+
+/* PITCH */
+.pitch-area{position:relative;display:flex;align-items:stretch;justify-content:center;background:#101410;overflow:hidden;}
+/* 2チーム時: GKがはみ出さないようにpitch-containerが自身のpitch-wrapをclipする */
+.pitch-wrap{position:relative;height:100%;aspect-ratio:7/11;max-width:100%;flex-shrink:0;}
+.pitch-svg{position:absolute;inset:0;width:100%;height:100%;}
+.pitch-players{position:absolute;inset:0;}
+.pitch-player{position:absolute;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .2s;user-select:none;z-index:2;}
+.pitch-player:hover{transform:translate(-50%,-50%) scale(1.08);}
+.pp-icon{width:54px;height:54px;border-radius:50%;background:#1a3010;border:3px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:var(--text-dim);overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.6);position:relative;flex-shrink:0;}
+.pp-icon img{width:100%;height:100%;object-fit:cover;}
+.pp-icon.empty{border-color:#333;background:rgba(0,0,0,.4);}
+.pp-badge{position:absolute;bottom:-2px;right:-2px;background:var(--accent);color:#000;font-family:'Bebas Neue',sans-serif;font-size:0.65rem;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:3;}
+.pp-label{margin-top:4px;font-size:0.65rem;font-weight:700;background:rgba(0,0,0,.75);padding:2px 6px;border-radius:10px;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center;backdrop-filter:blur(4px);}
+.pp-label.empty{color:var(--text-dim);}
+.pp-remove{position:absolute;top:-5px;right:-5px;width:17px;height:17px;background:var(--danger);border:none;border-radius:50%;color:#fff;font-size:0.65rem;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:4;}
+.pitch-player:hover .pp-remove{display:flex;}
+
+/* RIGHT PANEL - LINEUP */
+.lineup-scroll{flex:1;overflow-y:auto;padding:8px;}
+.lineup-scroll::-webkit-scrollbar{width:3px;}
+.lineup-scroll::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px;}
+.lineup-slot{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:5px;border:1px solid var(--panel-border);margin-bottom:4px;background:#0e0e0e;transition:border-color .15s;cursor:pointer;}
+.lineup-slot.filled{border-color:rgba(200,245,96,.2);}
+.ls-num{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--text-dim);width:18px;text-align:center;flex-shrink:0;}
+.ls-icon{width:42px;height:42px;border-radius:50%;background:#1a1a1a;border:2px solid #2a2a2a;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;flex-shrink:0;}
+.ls-icon img{width:100%;height:100%;object-fit:cover;}
+.ls-info{flex:1;min-width:0;}
+.ls-name{font-size:0.80rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ls-pos{font-size:0.65rem;color:var(--text-dim);}
+.ls-clear{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:0.75rem;padding:4px 6px;border-radius:3px;transition:color .15s;flex-shrink:0;}
+.ls-clear:hover{color:var(--danger);}
+.lineup-slot:hover{border-color:rgba(200,245,96,.3);background:#111;}
+.lineup-actions{padding:12px 14px;border-top:1px solid var(--panel-border);display:flex;flex-direction:column;gap:6px;flex-shrink:0;}
+.btn-full{width:100%;background:var(--accent);color:#000;border:none;padding:10px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;cursor:pointer;border-radius:5px;transition:opacity .2s;}
+.btn-full:hover{opacity:.85;}
+.btn-full.sec{background:#2a2a2a;color:var(--text-dim);font-size:.8rem;font-family:'Noto Sans JP',sans-serif;letter-spacing:0;padding:8px;}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:#161616;border:1px solid #2a2a2a;border-radius:10px;padding:20px;width:360px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;}
+.modal h3{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;color:var(--accent);margin:0;}
+.modal-body{flex:1;overflow-y:auto;}
+.modal-body::-webkit-scrollbar{width:3px;}
+.modal-body::-webkit-scrollbar-thumb{background:#2a2a2a;}
+.modal-actions{display:flex;gap:6px;margin-top:10px;flex-shrink:0;}
+/* PICKER MODAL extensions */
+.picker-modal{padding:14px 16px;gap:0;}
+.picker-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.picker-close{background:none;border:none;color:var(--text-dim);font-size:1.1rem;cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1;}
+.picker-close:hover{color:#fff;}
+.picker-team-row{display:flex;gap:5px;margin-bottom:7px;flex-wrap:wrap;}
+.picker-select{flex:1;min-width:120px;background:#0e0e0e;border:1px solid var(--panel-border);color:var(--text);padding:6px 8px;font-family:'Noto Sans JP',sans-serif;font-size:0.75rem;border-radius:4px;outline:none;}
+.picker-select:focus{border-color:var(--accent);}
+.picker-search-row{display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+.picker-search-input{flex:1;background:#0e0e0e;border:1px solid var(--panel-border);color:var(--text);padding:7px 10px;font-family:'Noto Sans JP',sans-serif;font-size:0.82rem;border-radius:4px;outline:none;}
+.picker-search-input:focus{border-color:var(--accent);}
+.picker-team-badge{display:inline-block;font-size:0.6rem;background:#1a3010;color:var(--accent);border-radius:3px;padding:1px 5px;margin-left:4px;vertical-align:middle;}
+
+/* LOADING SPINNER */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #333;border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--accent);color:#000;padding:9px 18px;border-radius:5px;font-weight:700;font-size:0.82rem;z-index:500;transition:transform .3s;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* TRANSFERMARKT LOADING */
+.tm-status{font-size:0.7rem;color:var(--text-dim);display:flex;align-items:center;gap:6px;padding:4px 0;}
+
+/* PLACEMENT MODE TOGGLE */
+.mode-btn{flex:1;background:none;border:none;color:var(--text-dim);padding:5px 4px;font-family:'Noto Sans JP',sans-serif;font-size:0.68rem;cursor:pointer;transition:all .15s;}
+.mode-btn.active{background:var(--accent);color:#000;font-weight:700;}
+.pos-slot-btn{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:5px;border:1px solid var(--panel-border);margin-bottom:4px;background:#0e0e0e;cursor:pointer;transition:border-color .15s;width:100%;}
+.pos-slot-btn:hover{border-color:rgba(200,245,96,.4);}
+.pos-slot-btn.slot-filled{border-color:rgba(200,245,96,.25);}
+.pos-badge{width:34px;height:34px;border-radius:50%;background:#1a3010;border:2px solid var(--accent);display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:700;flex-shrink:0;overflow:hidden;}
+.pos-badge.empty{border-color:#333;background:rgba(0,0,0,.4);color:var(--text-dim);}
+.pos-badge img{width:100%;height:100%;object-fit:cover;}
+
+/* BENCH */
+.lineup-section-label{font-size:0.6rem;letter-spacing:2px;color:var(--accent);text-transform:uppercase;font-weight:700;padding:8px 10px 4px;margin-top:2px;}
+.bench-label{color:var(--accent2);}
+.bench-slot{opacity:.92;}
+.bench-slot .ls-icon{border-color:#2a4a5a;}
+.bench-num{color:var(--accent2) !important;}
+.ls-swap{background:none;border:none;color:var(--accent2);cursor:pointer;font-size:0.9rem;padding:2px 4px;border-radius:3px;transition:color .15s;flex-shrink:0;}
+.ls-swap:hover{color:#fff;}
+
+/* ── DRAG AND DROP ── */
+.pitch-player.dragging{opacity:0.35;transform:translate(-50%,-50%) scale(0.9);}
+.pitch-player.drag-over .pp-icon{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--accent);transform:scale(1.15);}
+.lineup-slot.drag-over{border-color:var(--accent);background:rgba(200,245,96,.08);}
+.player-item.dragging-src{opacity:0.35;}
+.touch-ghost{position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);filter:drop-shadow(0 4px 12px rgba(0,0,0,.8));}
+@keyframes pulse-ring{from{box-shadow:0 0 0 2px var(--accent);}to{box-shadow:0 0 0 5px var(--accent),0 0 10px var(--accent);}}
+
+/* ── OPPONENT MODE ── */
+.pitch-container{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;flex:1;min-width:0;height:100%;position:relative;cursor:default;padding:4px 2px;}
+.pitch-area.opponent-mode .pitch-container{cursor:pointer;}
+.pitch-container-label{font-family:'Bebas Neue',sans-serif;font-size:0.78rem;letter-spacing:3px;color:rgba(255,255,255,0.35);padding:3px 0;flex-shrink:0;user-select:none;transition:color .15s;display:none;}
+.pitch-area.opponent-mode .pitch-container-label{display:block;}
+.pitch-container.active-team .pitch-container-label{color:var(--accent);}
+.pitch-area.opponent-mode .pitch-container:hover .pitch-container-label{color:rgba(255,255,255,0.65);}
+/* 2チーム横並び: ラベル分を引いてピッチを収める。GKの位置(y=92%)とバッジサイズを考慮して余白を確保 */
+.pitch-area.opponent-mode .pitch-container{justify-content:center;padding:2px;}
+.pitch-area.opponent-mode .pitch-wrap{max-width:100%;width:auto;height:calc(100% - 28px);max-height:100%;}
+.pitch-area.opponent-mode{gap:0;align-items:stretch;}
+
+/* ── TEAM TABS ── */
+.team-tabs{display:none;gap:4px;margin-bottom:8px;}
+.team-tabs.visible{display:flex;}
+.team-tab{flex:1;padding:5px;background:#0e0e0e;border:1px solid var(--panel-border);color:var(--text-dim);font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:2px;cursor:pointer;border-radius:3px;transition:all .15s;text-align:center;}
+.team-tab.active{background:var(--accent);color:#000;border-color:var(--accent);}
+.team-tab.away-tab.active{background:var(--accent2);color:#000;border-color:var(--accent2);}
+
+/* ── ACTIVE HEADER BUTTON ── */
+.header-btn.btn-active{background:var(--accent);color:#000;border-color:var(--accent);}
+
+/* ── MOBILE: OPPONENT STACKED ── */
+@media (max-width: 768px) {
+  .pitch-area.opponent-mode{flex-direction:column;height:auto;overflow-y:visible;}
+  .pitch-area.opponent-mode .pitch-container{width:100%;height:auto;border-bottom:1px solid #1a1a1a;}
+  .pitch-area.opponent-mode .pitch-container:last-child{border-bottom:none;}
+  .pitch-area.opponent-mode .pitch-wrap{max-width:none;width:min(100%,calc(100vw * 7/11));height:auto;max-height:80vw;}
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<header>
+  <h1>LINEUP BUILDER</h1>
+  <span class="subtitle">スタメン配置ツール</span>
+  <div class="spacer"></div>
+  <button class="header-btn" onclick="clearLineup()">🗑 クリア</button>
+  <button class="header-btn" onclick="flipPitch()" title="攻撃方向を反転">🔄 反転</button>
+  <button class="header-btn" onclick="showShareModal()">🔗 シェア</button>
+  <button class="header-btn" id="opponentBtn" onclick="toggleOpponent()">⚔️ 対戦相手</button>
+  <button class="header-btn" onclick="exportPNG()">📸 保存</button>
+  <label class="header-btn" title="チームカラー" style="cursor:pointer;display:flex;align-items:center;gap:4px;padding:4px 10px;">
+    🎨 <input type="color" id="teamColorPicker" value="#c8f560" oninput="currentTeamColor=this.value;applyTeamColor();" style="width:20px;height:20px;border:none;padding:0;background:none;cursor:pointer;vertical-align:middle;">
+  </label>
+  <button class="header-btn" onclick="showQR()" id="qrBtn" style="display:none">📱 QR</button>
+</header>
+
+<div class="app">
+  <!-- ===== LEFT ===== -->
+  <div class="left-panel">
+    <div class="panel-section">
+      <div class="panel-label">フォーメーション</div>
+      <div class="formation-grid" id="formationGrid"></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-label">チーム選択</div>
+      <div class="team-select-row" style="margin-bottom:6px;">
+        <select id="leagueSelect" onchange="loadLeague()">
+          <option value="">-- リーグを選ぶ --</option>
+        </select>
+      </div>
+      <div class="team-select-row">
+        <select id="teamSelect" onchange="loadTeam()">
+          <option value="">-- チームを選ぶ --</option>
+        </select>
+      </div>
+      <div class="tm-status" id="tmStatus"></div>
+    </div>
+
+    <!-- CUSTOM PLAYER -->
+    <div class="custom-panel">
+      <div class="panel-label">カスタム選手</div>
+      <div class="custom-tabs">
+        <button class="custom-tab active" onclick="switchCustomTab('search')">🔍 検索</button>
+        <button class="custom-tab" onclick="switchCustomTab('upload')">📁 アップロード</button>
+        <button class="custom-tab" onclick="switchCustomTab('manage')">⚙️ 管理</button>
+      </div>
+
+      <!-- SEARCH TAB -->
+      <div class="custom-tab-content active" id="tab-search">
+        <div class="search-row">
+          <input type="text" id="customName" placeholder="名前を入力..." />
+          <button class="btn-xs" onclick="searchPlayerImage()" id="searchBtn">検索</button>
+        </div>
+        <div class="img-results" id="searchResults"></div>
+        <div class="custom-note" id="searchNote"></div>
+        <div id="customPreviewRow" style="display:none;">
+          <div class="custom-preview-row">
+            <div class="p-avatar" id="customPreviewAvatar">👤</div>
+            <div style="flex:1">
+              <input type="text" id="customNameConfirm" placeholder="表示名" style="margin-bottom:4px;"/>
+            </div>
+          </div>
+          <div class="custom-form-row">
+            <input type="text" id="customPos" placeholder="ポジション (GK/DF/MF/FW)" />
+            <input type="text" id="customNum" placeholder="#" style="width:40px;" />
+            <button class="btn-xs" onclick="addCustomPlayer()">追加</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPLOAD TAB -->
+      <div class="custom-tab-content" id="tab-upload">
+        <div class="search-row">
+          <input type="text" id="uploadName" placeholder="選手名" />
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+          <label class="upload-label">
+            📁 画像を選択
+            <input type="file" id="uploadFile" accept="image/*" onchange="handleUpload()">
+          </label>
+          <div id="uploadPreview" style="width:44px;height:44px;border-radius:50%;background:#1a1a1a;border:2px solid #2a2a2a;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.2rem;">👤</div>
+        </div>
+        <div class="custom-form-row">
+          <input type="text" id="uploadPos" placeholder="ポジション" />
+          <input type="text" id="uploadNum" placeholder="#" style="width:40px;" />
+          <button class="btn-xs" onclick="addUploadPlayer()">追加</button>
+        </div>
+      </div>
+
+      <!-- MANAGE TAB -->
+      <div class="custom-tab-content" id="tab-manage">
+        <div id="customPlayerManageList" style="max-height:140px;overflow-y:auto;"></div>
+        <div class="custom-note" style="margin-top:4px;">登録済みカスタム選手を管理</div>
+      </div>
+    </div>
+
+    <!-- PLAYER LIST -->
+    <div style="padding:8px 14px 4px;flex-shrink:0;">
+      <input type="text" class="player-search-input" id="playerSearchInput" placeholder="🔍 名前・ポジション・背番号..." oninput="filterPlayerList()">
+    </div>
+    <!-- 配置モード切り替え -->
+    <div style="display:flex;gap:4px;padding:5px 10px 6px;border-bottom:1px solid var(--panel-border);">
+      <span style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;align-self:center;flex-shrink:0;">配置</span>
+      <div style="display:flex;flex:1;background:#0e0e0e;border:1px solid var(--panel-border);border-radius:4px;overflow:hidden;">
+        <button id="modePlayerFirst" class="mode-btn active" onclick="setPlacementMode('player')">👤 選手から</button>
+        <button id="modePosFirst" class="mode-btn" onclick="setPlacementMode('position')">📍 ポジションから</button>
+      </div>
+    </div>
+    <!-- 選手一覧（選手ファーストモード） -->
+    <div id="playerPickerPanel" style="flex:1;min-height:0;display:flex;flex-direction:column;">
+      <div class="player-list-wrap" id="playerList">
+        <div style="color:var(--text-dim);font-size:0.78rem;padding:8px;text-align:center;">チームを選択してください</div>
+      </div>
+    </div>
+    <!-- ポジション一覧（ポジションファーストモード） -->
+    <div id="positionPickerPanel" style="flex:1;min-height:0;display:none;flex-direction:column;">
+      <div class="player-list-wrap" id="positionList" style="flex:1;overflow-y:auto;padding:6px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== PITCH ===== -->
+  <div class="pitch-area" id="pitchArea">
+    <!-- HOME TEAM -->
+    <div class="pitch-container active-team" id="homeContainer" onclick="setActiveTeamClick('home')">
+      <div class="pitch-container-label" id="homeLabel">HOME</div>
+      <div class="pitch-wrap" id="pitchWrap">
+        <svg class="pitch-svg" viewBox="0 0 700 1100" xmlns="http://www.w3.org/2000/svg">
+          <rect width="700" height="1100" fill="#2a5c14"/>
+          <rect x="0" y="0" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="0" y="220" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="0" y="440" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="0" y="660" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="0" y="880" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="28" y="28" width="644" height="1044" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="3"/>
+          <line x1="28" y1="550" x2="672" y2="550" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <circle cx="350" cy="550" r="91" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <circle cx="350" cy="550" r="4" fill="rgba(255,255,255,.55)"/>
+          <rect x="175" y="28" width="350" height="178" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <rect x="252" y="28" width="196" height="78" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <circle cx="350" cy="152" r="4" fill="rgba(255,255,255,.55)"/>
+          <rect x="175" y="894" width="350" height="178" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <rect x="252" y="994" width="196" height="78" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <circle cx="350" cy="948" r="4" fill="rgba(255,255,255,.55)"/>
+          <rect x="272" y="0" width="156" height="28" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+          <rect x="272" y="1072" width="156" height="28" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+          <path d="M28,28 A18,18 0 0,1 46,46" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+          <path d="M672,28 A18,18 0 0,0 654,46" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+          <path d="M28,1072 A18,18 0 0,0 46,1054" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+          <path d="M672,1072 A18,18 0 0,1 654,1054" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        </svg>
+        <div class="pitch-players" id="pitchPlayers"></div>
+      </div>
+    </div>
+    <!-- AWAY TEAM (hidden by default) -->
+    <div class="pitch-container" id="awayContainer" style="display:none" onclick="setActiveTeamClick('away')">
+      <div class="pitch-container-label" id="awayLabel">AWAY</div>
+      <div class="pitch-wrap" id="opponentPitchWrap">
+        <svg class="pitch-svg" viewBox="0 0 700 1100" xmlns="http://www.w3.org/2000/svg">
+          <rect width="700" height="1100" fill="#2a5c14"/>
+          <rect x="0" y="0" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="0" y="220" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="0" y="440" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="0" y="660" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="0" y="880" width="700" height="110" fill="#306818" opacity=".7"/>
+          <rect x="28" y="28" width="644" height="1044" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="3"/>
+          <line x1="28" y1="550" x2="672" y2="550" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <circle cx="350" cy="550" r="91" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <circle cx="350" cy="550" r="4" fill="rgba(255,255,255,.55)"/>
+          <rect x="175" y="28" width="350" height="178" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <rect x="252" y="28" width="196" height="78" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <circle cx="350" cy="152" r="4" fill="rgba(255,255,255,.55)"/>
+          <rect x="175" y="894" width="350" height="178" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <rect x="252" y="994" width="196" height="78" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2"/>
+          <circle cx="350" cy="948" r="4" fill="rgba(255,255,255,.55)"/>
+          <rect x="272" y="0" width="156" height="28" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+          <rect x="272" y="1072" width="156" height="28" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+          <path d="M28,28 A18,18 0 0,1 46,46" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+          <path d="M672,28 A18,18 0 0,0 654,46" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+          <path d="M28,1072 A18,18 0 0,0 46,1054" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+          <path d="M672,1072 A18,18 0 0,1 654,1054" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2"/>
+        </svg>
+        <div class="pitch-players" id="opponentPitchPlayers"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RIGHT ===== -->
+  <div class="right-panel">
+    <div class="panel-section">
+      <div class="team-tabs" id="teamTabs">
+        <button class="team-tab active" id="homeTab" onclick="setActiveTeam('home')">HOME</button>
+        <button class="team-tab away-tab" id="awayTab" onclick="setActiveTeam('away')">AWAY</button>
+      </div>
+      <div class="panel-label">スタメン・ベンチ</div>
+      <div style="font-size:0.68rem;color:var(--text-dim);line-height:1.4;" id="lineupCount">スターター 0/11人　ベンチ 0/5人</div>
+    </div>
+    <div class="lineup-scroll" id="lineupList"></div>
+    <div class="lineup-actions">
+      <button class="btn-full" onclick="exportPNG()">📸 画像として保存</button>
+      <div style="display:flex;gap:4px;">
+        <button class="btn-full sec" onclick="openSaveModal()" style="flex:1;">💾 保存</button>
+        <button class="btn-full sec" onclick="openLoadModal()" style="flex:1;">📂 読み込み</button>
+      </div>
+      <button class="btn-full sec" onclick="clearLineup()">🗑 クリア</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- QR CODE MODAL -->
+<div class="modal-overlay" id="qrModal">
+  <div class="modal" style="align-items:center;max-width:320px;">
+    <h3>📱 スマホでテスト</h3>
+    <div class="modal-body" style="text-align:center;padding:10px 0;">
+      <p style="font-size:0.8rem;color:var(--text-dim);margin-bottom:12px;">このファイルをサーバーにアップロードしてからQRを読み取ってください</p>
+      <div id="qrCodeArea" style="width:200px;height:200px;margin:0 auto;background:#fff;display:flex;align-items:center;justify-content:center;border-radius:8px;"></div>
+      <p id="qrUrlText" style="font-size:0.68rem;color:var(--text-dim);margin-top:8px;word-break:break-all;"></p>
+      <hr style="border-color:#333;margin:12px 0;">
+      <p style="font-size:0.8rem;color:var(--accent);font-weight:700;margin-bottom:6px;">💡 ローカルでテストする方法</p>
+      <p style="font-size:0.72rem;color:var(--text-dim);line-height:1.6;">
+        1. PC で <code style="background:#1a1a1a;padding:2px 5px;border-radius:3px;">python -m http.server 8080</code> を実行<br>
+        2. PCのIPアドレスを確認（例: 192.168.1.5）<br>
+        3. スマホで <code style="background:#1a1a1a;padding:2px 5px;border-radius:3px;">http://192.168.1.5:8080/</code> を開く<br>
+        ※ PCとスマホが同じWi-Fiに繋がっている必要があります
+      </p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-xs sec" style="flex:1;" onclick="document.getElementById('qrModal').classList.remove('open')">閉じる</button>
+    </div>
+  </div>
+</div>
+<!-- SLOT MODAL - player picker with team/league filter -->
+<div class="modal-overlay" id="slotModal">
+  <div class="modal picker-modal">
+    <div class="picker-header">
+      <h3 id="modalTitle">選手を配置</h3>
+      <button class="picker-close" onclick="closeModal()">✕</button>
+    </div>
+    <!-- Team selector inside modal -->
+    <div class="picker-team-row" id="pickerTeamRow">
+      <select id="pickerLeagueSelect" onchange="onPickerLeagueChange()" class="picker-select">
+        <option value="">-- リーグを選ぶ --</option>
+      </select>
+      <select id="pickerTeamSelect" onchange="onPickerTeamChange()" class="picker-select" style="display:none;">
+        <option value="">-- チームを選ぶ --</option>
+      </select>
+    </div>
+    <!-- Name search (cross-team) -->
+    <div class="picker-search-row">
+      <input type="text" id="modalSearch" placeholder="🔍 名前・ポジション(GK/FW)・背番号..." oninput="filterModal()" class="picker-search-input">
+      <span id="pickerLoadStatus" style="font-size:0.65rem;color:var(--text-dim);white-space:nowrap;"></span>
+    </div>
+    <div class="modal-body" id="modalPlayerList"></div>
+    <div class="modal-actions">
+      <button class="btn-xs sec" style="flex:1;" onclick="closeModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- SAVE MODAL -->
+<div class="modal-overlay" id="saveModal">
+  <div class="modal" style="max-width:320px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="margin:0;">💾 ラインナップを保存</h3>
+      <button class="picker-close" onclick="document.getElementById('saveModal').classList.remove('open')">✕</button>
+    </div>
+    <input type="text" id="saveNameInput" placeholder="名前を入力（例: ドリームチーム）" style="margin-bottom:10px;">
+    <div id="saveSlotList" class="modal-body" style="max-height:200px;"></div>
+    <div class="modal-actions">
+      <button class="btn-xs" onclick="doSaveLineup()" style="flex:1;">保存する</button>
+      <button class="btn-xs sec" onclick="document.getElementById('saveModal').classList.remove('open')" style="flex:1;">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOAD MODAL -->
+<div class="modal-overlay" id="loadModal">
+  <div class="modal" style="max-width:320px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="margin:0;">📂 ラインナップを読み込み</h3>
+      <button class="picker-close" onclick="document.getElementById('loadModal').classList.remove('open')">✕</button>
+    </div>
+    <div id="loadSlotList" class="modal-body" style="max-height:260px;"></div>
+    <div class="modal-actions">
+      <button class="btn-xs sec" onclick="document.getElementById('loadModal').classList.remove('open')" style="flex:1;">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal" style="max-width:340px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="margin:0;">🔗 シェアURL</h3>
+      <button class="picker-close" onclick="document.getElementById('shareModal').classList.remove('open')">✕</button>
+    </div>
+    <div style="text-align:center;margin-bottom:12px;">
+      <img id="shareQRImg" src="" width="160" height="160" style="border-radius:8px;background:#fff;">
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <input type="text" id="shareUrlText" readonly style="flex:1;font-size:0.65rem;padding:6px 8px;">
+      <button class="btn-xs" onclick="copyShareURL()" style="flex-shrink:0;">コピー</button>
+    </div>
+    <p style="font-size:0.65rem;color:var(--text-dim);margin:0;">※ 選手名・フォーメーション・チームカラーをURLに含みます。</p>
+    <div class="modal-actions">
+      <button class="btn-xs sec" style="flex:1;" onclick="document.getElementById('shareModal').classList.remove('open')">閉じる</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA: FORMATIONS
+// ============================================================
+const FORMATIONS = {
+  // ── 4バック系 ──
+  "4-4-2":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"RM",x:80,y:55},{role:"CM",x:60,y:57},{role:"CM",x:40,y:57},{role:"LM",x:20,y:55},
+    {role:"ST",x:38,y:32},{role:"ST",x:62,y:32}]},
+  "4-2-2-2":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"DM",x:62,y:64},{role:"DM",x:38,y:64},
+    {role:"RM",x:78,y:48},{role:"LM",x:22,y:48},
+    {role:"ST",x:38,y:30},{role:"ST",x:62,y:30}]},
+  "4-2-4":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"DM",x:62,y:60},{role:"DM",x:38,y:60},
+    {role:"RW",x:82,y:32},{role:"SS",x:60,y:28},{role:"SS",x:40,y:28},{role:"LW",x:18,y:32}]},
+  "4-1-2-3":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"DM",x:50,y:65},
+    {role:"CM",x:68,y:53},{role:"CM",x:32,y:53},
+    {role:"RW",x:80,y:32},{role:"CF",x:50,y:27},{role:"LW",x:20,y:32}]},
+  "4-3-3":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"DM",x:50,y:64},{role:"CM",x:72,y:54},{role:"CM",x:28,y:54},
+    {role:"RW",x:80,y:32},{role:"CF",x:50,y:26},{role:"LW",x:20,y:32}]},
+  "4-3-2-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"CM",x:70,y:60},{role:"CM",x:50,y:58},{role:"CM",x:30,y:60},
+    {role:"SS",x:65,y:42},{role:"SS",x:35,y:42},
+    {role:"CF",x:50,y:27}]},
+  "4-2-3-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"DM",x:62,y:63},{role:"DM",x:38,y:63},
+    {role:"RMF",x:78,y:46},{role:"OMF",x:50,y:44},{role:"LMF",x:22,y:46},
+    {role:"CF",x:50,y:27}]},
+  "4-1-4-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"DM",x:50,y:64},
+    {role:"RM",x:82,y:50},{role:"CM",x:62,y:52},{role:"CM",x:38,y:52},{role:"LM",x:18,y:50},
+    {role:"CF",x:50,y:27}]},
+  "4-3-1-2":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"CM",x:70,y:60},{role:"CM",x:50,y:62},{role:"CM",x:30,y:60},
+    {role:"OM",x:50,y:45},
+    {role:"ST",x:65,y:30},{role:"ST",x:35,y:30}]},
+  "4-5-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"RM",x:84,y:53},{role:"CM",x:67,y:55},{role:"CM",x:50,y:53},{role:"CM",x:33,y:55},{role:"LM",x:16,y:53},
+    {role:"CF",x:50,y:27}]},
+  "4-4-2◆":{positions:[
+    {role:"GK",x:50,y:92},{role:"RB",x:80,y:76},{role:"CB",x:62,y:78},{role:"CB",x:38,y:78},{role:"LB",x:20,y:76},
+    {role:"DM",x:50,y:64},{role:"RM",x:80,y:52},{role:"LM",x:20,y:52},{role:"OM",x:50,y:42},
+    {role:"ST",x:38,y:28},{role:"ST",x:62,y:28}]},
+  // ── 3バック系 ──
+  "3-4-2-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"CB",x:70,y:78},{role:"CB",x:50,y:80},{role:"CB",x:30,y:78},
+    {role:"RWB",x:84,y:60},{role:"CM",x:64,y:58},{role:"CM",x:36,y:58},{role:"LWB",x:16,y:60},
+    {role:"SS",x:65,y:42},{role:"SS",x:35,y:42},
+    {role:"CF",x:50,y:27}]},
+  "3-4-1-2":{positions:[
+    {role:"GK",x:50,y:92},{role:"CB",x:70,y:78},{role:"CB",x:50,y:80},{role:"CB",x:30,y:78},
+    {role:"RWB",x:84,y:60},{role:"CM",x:64,y:58},{role:"CM",x:36,y:58},{role:"LWB",x:16,y:60},
+    {role:"OM",x:50,y:44},
+    {role:"ST",x:65,y:29},{role:"ST",x:35,y:29}]},
+  "3-2-2-3":{positions:[
+    {role:"GK",x:50,y:92},{role:"CB",x:68,y:79},{role:"CB",x:50,y:81},{role:"CB",x:32,y:79},
+    {role:"DM",x:63,y:66},{role:"DM",x:37,y:66},
+    {role:"RM",x:78,y:50},{role:"LM",x:22,y:50},
+    {role:"RW",x:78,y:32},{role:"CF",x:50,y:27},{role:"LW",x:22,y:32}]},
+  "3-5-2":{positions:[
+    {role:"GK",x:50,y:92},{role:"CB",x:70,y:77},{role:"CB",x:50,y:80},{role:"CB",x:30,y:77},
+    {role:"RWB",x:85,y:59},{role:"CM",x:67,y:54},{role:"CM",x:50,y:51},{role:"CM",x:33,y:54},{role:"LWB",x:15,y:59},
+    {role:"ST",x:38,y:32},{role:"ST",x:62,y:32}]},
+  "3-3-3-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"CB",x:70,y:79},{role:"CB",x:50,y:81},{role:"CB",x:30,y:79},
+    {role:"CM",x:70,y:63},{role:"CM",x:50,y:63},{role:"CM",x:30,y:63},
+    {role:"RW",x:78,y:44},{role:"SS",x:50,y:42},{role:"LW",x:22,y:44},
+    {role:"CF",x:50,y:27}]},
+  "3-5-1-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"CB",x:70,y:77},{role:"CB",x:50,y:80},{role:"CB",x:30,y:77},
+    {role:"RWB",x:85,y:59},{role:"CM",x:67,y:54},{role:"CM",x:50,y:51},{role:"CM",x:33,y:54},{role:"LWB",x:15,y:59},
+    {role:"SS",x:50,y:40},
+    {role:"CF",x:50,y:27}]},
+  // ── 5バック系 ──
+  "5-3-2":{positions:[
+    {role:"GK",x:50,y:92},{role:"RWB",x:85,y:74},{role:"CB",x:68,y:78},{role:"CB",x:50,y:80},{role:"CB",x:32,y:78},{role:"LWB",x:15,y:74},
+    {role:"CM",x:67,y:55},{role:"CM",x:50,y:52},{role:"CM",x:33,y:55},
+    {role:"ST",x:38,y:31},{role:"ST",x:62,y:31}]},
+  "5-3-1-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"RWB",x:85,y:74},{role:"CB",x:68,y:78},{role:"CB",x:50,y:80},{role:"CB",x:32,y:78},{role:"LWB",x:15,y:74},
+    {role:"CM",x:67,y:55},{role:"CM",x:50,y:52},{role:"CM",x:33,y:55},
+    {role:"SS",x:50,y:40},
+    {role:"CF",x:50,y:27}]},
+  "5-4-1":{positions:[
+    {role:"GK",x:50,y:92},{role:"RWB",x:85,y:74},{role:"CB",x:68,y:78},{role:"CB",x:50,y:80},{role:"CB",x:32,y:78},{role:"LWB",x:15,y:74},
+    {role:"RM",x:80,y:55},{role:"CM",x:60,y:57},{role:"CM",x:40,y:57},{role:"LM",x:20,y:55},
+    {role:"CF",x:50,y:28}]},
+  "5-3-1-1B":{positions:[
+    {role:"GK",x:50,y:92},{role:"RWB",x:85,y:74},{role:"CB",x:68,y:78},{role:"CB",x:50,y:80},{role:"CB",x:32,y:78},{role:"LWB",x:15,y:74},
+    {role:"CM",x:67,y:56},{role:"DM",x:50,y:63},{role:"CM",x:33,y:56},
+    {role:"OM",x:50,y:44},
+    {role:"CF",x:50,y:28}]},
+  // ── その他 ──
+  "2-3-5":{positions:[
+    {role:"GK",x:50,y:92},{role:"CB",x:65,y:81},{role:"CB",x:35,y:81},
+    {role:"CM",x:70,y:65},{role:"CM",x:50,y:63},{role:"CM",x:30,y:65},
+    {role:"RW",x:88,y:36},{role:"CF",x:68,y:28},{role:"CF",x:50,y:26},{role:"CF",x:32,y:28},{role:"LW",x:12,y:36}]},
+};
+
+// ============================================================
+// DATA: LEAGUES & TEAMS (Transfermarkt IDs for image fetching)
+// ============================================================
+// ============================================================
+// TEAM DATA: ESPN API IDs
+// Roster API: https://site.api.espn.com/apis/site/v2/sports/soccer/{league}/teams/{id}/roster
+// Photo:      https://a.espncdn.com/i/headshots/soccer/players/full/{player_id}.png
+// ============================================================
+const LEAGUES = {
+  "J1リーグ": {
+    "浦和レッズ":        {id:"3961", league:"jpn.1"},
+    "鹿島アントラーズ":  {id:"3963", league:"jpn.1"},
+    "横浜F・マリノス":   {id:"3966", league:"jpn.1"},
+    "FC東京":           {id:"3962", league:"jpn.1"},
+    "川崎フロンターレ":  {id:"3964", league:"jpn.1"},
+    "ガンバ大阪":        {id:"3965", league:"jpn.1"},
+    "セレッソ大阪":      {id:"3967", league:"jpn.1"},
+    "サンフレッチェ広島": {id:"3968", league:"jpn.1"},
+    "名古屋グランパス":  {id:"3969", league:"jpn.1"},
+    "ヴィッセル神戸":    {id:"3970", league:"jpn.1"},
+    "柏レイソル":        {id:"3971", league:"jpn.1"},
+    "アビスパ福岡":      {id:"3972", league:"jpn.1"},
+    "湘南ベルマーレ":    {id:"3973", league:"jpn.1"},
+    "アルビレックス新潟": {id:"3974", league:"jpn.1"},
+    "北海道コンサドーレ札幌": {id:"3975", league:"jpn.1"},
+    "京都サンガ":        {id:"3976", league:"jpn.1"},
+    "東京ヴェルディ":    {id:"3977", league:"jpn.1"},
+    "ジュビロ磐田":      {id:"3978", league:"jpn.1"},
+    "清水エスパルス":    {id:"3979", league:"jpn.1"},
+    "横浜FC":           {id:"3980", league:"jpn.1"},
+  },
+  "プレミアリーグ": {
+    "マンチェスターC":   {id:"382",  league:"eng.1"},
+    "アーセナル":        {id:"359",  league:"eng.1"},
+    "リヴァプール":      {id:"364",  league:"eng.1"},
+    "チェルシー":        {id:"363",  league:"eng.1"},
+    "マンチェスターU":   {id:"360",  league:"eng.1"},
+    "トッテナム":        {id:"367",  league:"eng.1"},
+    "ニューカッスル":    {id:"361",  league:"eng.1"},
+    "アストン・ヴィラ":  {id:"362",  league:"eng.1"},
+    "ウェストハム":      {id:"371",  league:"eng.1"},
+    "ブライトン":        {id:"331",  league:"eng.1"},
+    "フラム":           {id:"370",  league:"eng.1"},
+    "ウォルヴァーハンプトン": {id:"380", league:"eng.1"},
+    "クリスタルパレス":  {id:"384",  league:"eng.1"},
+    "ブレントフォード":  {id:"397",  league:"eng.1"},
+    "エヴァートン":      {id:"368",  league:"eng.1"},
+    "ボーンマス":        {id:"349",  league:"eng.1"},
+    "ノッティンガム・フォレスト": {id:"393", league:"eng.1"},
+    "イプスウィッチ":    {id:"394",  league:"eng.1"},
+    "レスター":          {id:"375",  league:"eng.1"},
+    "サウサンプトン":    {id:"376",  league:"eng.1"},
+  },
+  "ラ・リーガ": {
+    "バルセロナ":        {id:"83",   league:"esp.1"},
+    "レアル・マドリード": {id:"86",  league:"esp.1"},
+    "アトレティコ・マドリード": {id:"1068", league:"esp.1"},
+    "セビージャ":        {id:"243",  league:"esp.1"},
+    "ビジャレアル":      {id:"449",  league:"esp.1"},
+    "レアル・ソシエダ":  {id:"541",  league:"esp.1"},
+    "ベティス":          {id:"244",  league:"esp.1"},
+    "アスレティック・クルブ": {id:"93", league:"esp.1"},
+    "バレンシア":        {id:"94",   league:"esp.1"},
+    "オサスナ":          {id:"245",  league:"esp.1"},
+    "ジローナ":          {id:"9812", league:"esp.1"},
+    "マジョルカ":        {id:"97",   league:"esp.1"},
+    "アラベス":          {id:"559",  league:"esp.1"},
+    "ラス・パルマス":    {id:"248",  league:"esp.1"},
+    "レガネス":          {id:"558",  league:"esp.1"},
+    "ゲタフェ":          {id:"98",   league:"esp.1"},
+    "ラージョ":          {id:"101",  league:"esp.1"},
+    "セルタ":            {id:"246",  league:"esp.1"},
+    "エスパニョール":    {id:"88",   league:"esp.1"},
+    "バジャドリード":    {id:"102",  league:"esp.1"},
+  },
+  "ブンデスリーガ": {
+    "バイエルン・ミュンヘン": {id:"132", league:"ger.1"},
+    "ボルシア・ドルトムント": {id:"124", league:"ger.1"},
+    "RBライプツィヒ":   {id:"11420", league:"ger.1"},
+    "レバークーゼン":    {id:"131",  league:"ger.1"},
+    "フランクフルト":   {id:"1877", league:"ger.1"},
+    "シュトゥットガルト": {id:"161", league:"ger.1"},
+    "ヴォルフスブルク": {id:"160",  league:"ger.1"},
+    "ホッフェンハイム": {id:"169",  league:"ger.1"},
+    "フライブルク":     {id:"136",  league:"ger.1"},
+    "アウクスブルク":   {id:"1879", league:"ger.1"},
+    "ボーフム":          {id:"163",  league:"ger.1"},
+    "ウニオン・ベルリン": {id:"11746", league:"ger.1"},
+    "ケルン":           {id:"163",  league:"ger.1"},
+    "マインツ":          {id:"159",  league:"ger.1"},
+    "ヴェルダー・ブレーメン": {id:"162", league:"ger.1"},
+    "グラードバッハ":   {id:"126",  league:"ger.1"},
+    "ハイデンハイム":   {id:"19767", league:"ger.1"},
+    "ザンクト・パウリ": {id:"135",  league:"ger.1"},
+  },
+  "セリエA": {
+    "インテル":          {id:"110",  league:"ita.1"},
+    "ミラン":            {id:"103",  league:"ita.1"},
+    "ユヴェントス":      {id:"111",  league:"ita.1"},
+    "ナポリ":            {id:"3591", league:"ita.1"},
+    "ローマ":            {id:"104",  league:"ita.1"},
+    "ラツィオ":          {id:"108",  league:"ita.1"},
+    "アタランタ":        {id:"3587", league:"ita.1"},
+    "フィオレンティーナ": {id:"106", league:"ita.1"},
+    "ボローニャ":        {id:"3593", league:"ita.1"},
+    "トリノ":            {id:"116",  league:"ita.1"},
+    "モンツァ":          {id:"15030", league:"ita.1"},
+    "エンポリ":          {id:"3590", league:"ita.1"},
+    "ウディネーゼ":      {id:"117",  league:"ita.1"},
+    "ジェノア":          {id:"107",  league:"ita.1"},
+    "カリアリ":          {id:"3588", league:"ita.1"},
+    "レッチェ":          {id:"3592", league:"ita.1"},
+    "ヴェローナ":        {id:"118",  league:"ita.1"},
+    "コモ":              {id:"21853", league:"ita.1"},
+    "パルマ":            {id:"113",  league:"ita.1"},
+    "ヴェネツィア":      {id:"119",  league:"ita.1"},
+  },
+  "リーグ・アン": {
+    "パリSG":           {id:"160",  league:"fra.1"},
+    "モナコ":            {id:"163",  league:"fra.1"},
+    "マルセイユ":        {id:"162",  league:"fra.1"},
+    "ランス":            {id:"3000", league:"fra.1"},
+    "ニース":            {id:"166",  league:"fra.1"},
+    "リヨン":            {id:"3003", league:"fra.1"},
+    "リール":            {id:"3001", league:"fra.1"},
+    "レンヌ":            {id:"3002", league:"fra.1"},
+    "ランス":            {id:"3000", league:"fra.1"},
+    "ストラスブール":   {id:"3004", league:"fra.1"},
+    "ナント":            {id:"3005", league:"fra.1"},
+    "アンジェ":          {id:"3006", league:"fra.1"},
+    "スタッド・ドゥ・ランス": {id:"3007", league:"fra.1"},
+    "ル・アーブル":     {id:"3008", league:"fra.1"},
+    "サン=テティエンヌ": {id:"167",  league:"fra.1"},
+    "トゥールーズ":     {id:"168",  league:"fra.1"},
+    "オーセール":        {id:"164",  league:"fra.1"},
+    "モンペリエ":        {id:"165",  league:"fra.1"},
+    "ブレスト":          {id:"3009", league:"fra.1"},
+    "ランス3":          {id:"3010", league:"fra.1"},
+  },
+  "ワールドカップ出場国": {
+    "日本":           {id:"294",  league:"preset"},
+    "ブラジル":       {id:"95",   league:"preset"},
+    "フランス":       {id:"577",  league:"preset"},
+    "アルゼンチン":   {id:"9",    league:"preset"},
+    "ドイツ":         {id:"102",  league:"preset"},
+    "スペイン":       {id:"161",  league:"preset"},
+    "イングランド":   {id:"76",   league:"preset"},
+    "イタリア":       {id:"110",  league:"preset"},
+    "ポルトガル":     {id:"135",  league:"preset"},
+    "オランダ":       {id:"125",  league:"preset"},
+    "韓国":           {id:"297",  league:"preset"},
+    "アメリカ":       {id:"285",  league:"preset"},
+    "メキシコ":       {id:"128",  league:"preset"},
+    "クロアチア":     {id:"219",  league:"preset"},
+    "セネガル":       {id:"175",  league:"preset"},
+    "モロッコ":       {id:"208",  league:"preset"},
+    "オーストラリア": {id:"283",  league:"preset"},
+  }
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let currentFormation = "4-3-3";
+let lineup = {}; // slotIndex -> player
+
+// OPPONENT STATE
+let opponentEnabled = false;
+let activeTeam = 'home'; // 'home' | 'away'
+let opponentFormation = '4-4-2';
+let opponentLineup = {};
+let opponentBench = [null, null, null, null, null];
+let activeModalTeam = 'home';
+let bench = [null, null, null, null, null]; // 5 bench slots
+let teamPlayers = [];
+let customPlayers = JSON.parse(localStorage.getItem('customPlayers') || '[]');
+let allPlayers = []; // all available players across loaded teams (accumulates!)
+let loadedTeamPlayers = {}; // teamName -> players (cache)
+let pendingSearch = null; // {name, imgSrc}
+let uploadImgDataUrl = null;
+let activeModalMode = null; // 'slot' | 'bench'
+let activeSlotIdx = null;
+let activeBenchIdx = null;
+let currentTeamId = null;
+let playerSearchFilter = '';
+let modalFilter = '';
+let allModalPlayers = [];
+
+// ============================================================
+// ROLE MAPPING (for smart formation change)
+// ============================================================
+const ROLE_GROUP = {
+  'GK':0,
+  'CB':1,'DF':1,
+  'RB':2,'RWB':2,
+  'LB':3,'LWB':3,
+  'DM':4,'CDM':4,
+  'CM':5,
+  'OM':6,'OMF':6,'AM':6,
+  'RM':7,'RMF':7,'RW':7,
+  'LM':8,'LMF':8,'LW':8,
+  'SS':9,
+  'CF':10,'ST':10,'FW':10
+};
+function getRoleGroup(role) {
+  if (ROLE_GROUP[role] !== undefined) return ROLE_GROUP[role];
+  if (/GK/.test(role)) return 0;
+  if (/WB/.test(role)) return /^R/.test(role) ? 2 : 3;
+  if (/^CB/.test(role)) return 1;
+  if (/^DM/.test(role)) return 4;
+  if (/^[RL]M$/.test(role)||/^[RL]W$/.test(role)) return /^R/.test(role) ? 7 : 8;
+  if (/ST|CF|FW/.test(role)) return 10;
+  return 5;
+}
+function smartRemapLineup(oldPositions, newPositions, oldLineup) {
+  const available = Object.entries(oldLineup)
+    .filter(([,p]) => p)
+    .map(([idx, player]) => {
+      const pos = oldPositions[+idx];
+      return { player, group: getRoleGroup(pos.role), x: pos.x, y: pos.y, used: false };
+    });
+  const newLineup = {};
+  newPositions.forEach((newPos, newIdx) => {
+    const ng = getRoleGroup(newPos.role);
+    let best = -1, bestScore = Infinity;
+    available.forEach((a, i) => {
+      if (a.used) return;
+      const score = Math.abs(a.group - ng) * 40 + Math.abs(a.x - newPos.x) + Math.abs(a.y - newPos.y);
+      if (score < bestScore) { bestScore = score; best = i; }
+    });
+    if (best >= 0) { newLineup[newIdx] = available[best].player; available[best].used = true; }
+  });
+  return newLineup;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  // Formations
+  const fg = document.getElementById('formationGrid');
+  Object.keys(FORMATIONS).forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'formation-btn' + (f===currentFormation?' active':'');
+    btn.textContent = f;
+    btn.onclick = () => setFormation(f);
+    fg.appendChild(btn);
+  });
+
+  // Leagues
+  const ls = document.getElementById('leagueSelect');
+  Object.keys(LEAGUES).forEach(league => {
+    const o = document.createElement('option');
+    o.value = league; o.textContent = league;
+    ls.appendChild(o);
+  });
+
+  renderPitch();
+  renderLineupList();
+  renderCustomManageList();
+  // Load from share URL if present
+  loadFromHash();
+  // Show QR button when served from a real URL
+  if (window.location.protocol !== 'file:') {
+    document.getElementById('qrBtn').style.display = '';
+  }
+  // Initialize pinch zoom for mobile
+  initPitchZoom();
+}
+
+function setFormation(f) {
+  if (activeTeam === 'away') {
+    const oldPos = FORMATIONS[opponentFormation].positions;
+    const newPos = FORMATIONS[f].positions;
+    opponentLineup = smartRemapLineup(oldPos, newPos, opponentLineup);
+    opponentFormation = f;
+  } else {
+    const oldPos = FORMATIONS[currentFormation].positions;
+    const newPos = FORMATIONS[f].positions;
+    lineup = smartRemapLineup(oldPos, newPos, lineup);
+    currentFormation = f;
+  }
+  document.querySelectorAll('.formation-btn').forEach(b => b.classList.toggle('active', b.textContent===f));
+  renderPitch();
+  renderLineupList();
+  updateLineupCount();
+}
+
+function loadLeague() {
+  const league = document.getElementById('leagueSelect').value;
+  const ts = document.getElementById('teamSelect');
+  ts.innerHTML = '<option value="">-- チームを選ぶ --</option>';
+  if (!league) return;
+  const teams = LEAGUES[league];
+  Object.keys(teams).forEach(team => {
+    const o = document.createElement('option');
+    o.value = team;
+    const info = teams[team];
+    o.dataset.id = info.id;
+    o.dataset.league = info.league;
+    if (info.animeId) o.dataset.animeId = info.animeId;
+    o.textContent = team;
+    ts.appendChild(o);
+  });
+}
+
+async function loadTeam() {
+  const ts = document.getElementById('teamSelect');
+  const selected = ts.options[ts.selectedIndex];
+  const teamName = selected.value;
+  const teamId = selected.dataset.id;
+  const teamLeague = selected.dataset.league;
+  const animeId = selected.dataset.animeId ? parseInt(selected.dataset.animeId) : null;
+  if (!teamName) return;
+
+  currentTeamId = teamId;
+  // 左パネルのチーム選択をモーダルピッカーにも反映（チーム選択後にポジションアイコンを押しても選択チームが引き継がれる）
+  lastPickerLeague = document.getElementById('leagueSelect').value;
+  lastPickerTeam = teamName;
+
+  // キャッシュ済みなら即反映
+  if (loadedTeamPlayers[teamName]) {
+    teamPlayers = loadedTeamPlayers[teamName];
+    rebuildAllPlayers();
+    renderPlayerList();
+    setStatus(`✅ ${teamPlayers.length}人 (${teamName})`, false);
+    return;
+  }
+
+  setStatus(`⏳ ${teamName} のデータ取得中...`, true);
+
+  try {
+    let players = [];
+
+    if (teamLeague === 'preset') {
+      // 国代表: プリセットデータ使用
+      players = loadPresetPlayers(teamName);
+      if (!players.length) throw new Error('プリセットなし');
+      loadedTeamPlayers[teamName] = players;
+      teamPlayers = players;
+      rebuildAllPlayers();
+      renderPlayerList();
+      setStatus(`✅ ${players.length}人 (${teamName}) — 写真取得中...`, false);
+      enrichWithWikiPhotos(players).then(() => {
+        syncPhotosToLineupAndBench(players);
+        setStatus(`✅ ${players.length}人 (${teamName})`, false);
+      });
+
+    } else if (teamLeague === 'jpn.1') {
+      // Jリーグ: Wikipedia日本語版から取得
+      players = await fetchWikiSquad(teamName);
+      if (players.length < 3 && TEAM_PRESETS[teamName]) {
+        players = loadPresetPlayers(teamName);
+      }
+      loadedTeamPlayers[teamName] = players;
+      teamPlayers = players;
+      rebuildAllPlayers();
+      renderPlayerList();
+      setStatus(`✅ ${players.length}人 (${teamName}) — 写真取得中...`, false);
+      enrichWithWikiPhotos(players).then(() => {
+        syncPhotosToLineupAndBench(players);
+        setStatus(`✅ ${players.length}人 (${teamName})`, false);
+      });
+
+    } else {
+      // ESPN: プレミアリーグ等
+      players = await fetchESPNSquad(teamName, teamId, teamLeague);
+      loadedTeamPlayers[teamName] = players;
+      teamPlayers = players;
+      rebuildAllPlayers();
+      renderPlayerList();
+      setStatus(`✅ ${players.length}人取得完了 — 写真取得中...`, false);
+      enrichWithWikiPhotos(players).then(() => {
+        syncPhotosToLineupAndBench(players);
+        setStatus(`✅ ${players.length}人 (${teamName})`, false);
+      });
+    }
+
+  } catch(e) {
+    console.warn('loadTeam failed:', e.message);
+    // ESPNがダメならプリセットにフォールバック
+    if (TEAM_PRESETS[teamName]) {
+      const players = loadPresetPlayers(teamName);
+      loadedTeamPlayers[teamName] = players;
+      teamPlayers = players;
+      rebuildAllPlayers();
+      renderPlayerList();
+      setStatus(`✅ ${players.length}人 (プリセット)`, false);
+      enrichWithWikiPhotos(players).then(() => syncPhotosToLineupAndBench(players));
+    } else {
+      setStatus(`⚠️ データ取得失敗 — カスタム選手を追加してください`, false);
+    }
+  }
+}
+
+// プリセットデータから選手リストを生成
+function loadPresetPlayers(teamName) {
+  const data = TEAM_PRESETS[teamName];
+  if (!data) return [];
+  return data.map(p => ({ ...p, img: null, source: 'preset' }));
+}
+
+// 全ロード済みチーム + カスタム選手でallPlayersを再構築
+function rebuildAllPlayers() {
+  const seen = new Set();
+  allPlayers = [];
+  // 現在のチームを先頭に
+  for (const p of (teamPlayers || [])) {
+    if (!seen.has(p.name)) { seen.add(p.name); allPlayers.push(p); }
+  }
+  // 過去にロードした他のチームの選手も追加
+  for (const [tname, players] of Object.entries(loadedTeamPlayers)) {
+    if (players === teamPlayers) continue;
+    for (const p of players) {
+      if (!seen.has(p.name)) { seen.add(p.name); allPlayers.push(p); }
+    }
+  }
+  // カスタム選手
+  for (const p of customPlayers) {
+    if (!seen.has(p.name)) { seen.add(p.name); allPlayers.push(p); }
+  }
+}
+
+// lineup/bench内の選手の写真を最新に同期
+function syncPhotosToLineupAndBench(players) {
+  const photoMap = {};
+  players.forEach(p => { if (p.img) photoMap[p.name] = p.img; });
+  Object.values(lineup).forEach(p => { if (p && photoMap[p.name]) p.img = photoMap[p.name]; });
+  bench.forEach(p => { if (p && photoMap[p.name]) p.img = photoMap[p.name]; });
+  renderLineupList();
+  renderPitch();
+}
+
+// Enrich players with Wikipedia photos progressively
+async function enrichWithWikiPhotos(players) {
+  let updateCount = 0;
+  for (const player of players) {
+    if (player.img) continue;
+    try {
+      const photo = await fetchWikiPhoto(player.name);
+      if (photo) {
+        player.img = photo;
+        updateCount++;
+        // Re-render every 3 photos for progressive display
+        if (updateCount % 3 === 0) {
+          renderPlayerList();
+          renderLineupList(); // update lineup panel photos too
+          renderPitch();      // update pitch player icons too
+        }
+      }
+    } catch(e) {}
+    await new Promise(r => setTimeout(r, 80));
+  }
+  if (updateCount > 0) {
+    renderPlayerList();
+    renderLineupList();
+    renderPitch();
+  }
+}
+
+function setStatus(msg, loading) {
+  const el = document.getElementById('tmStatus');
+  el.innerHTML = loading ? `<span class="spinner"></span> ${msg}` : msg;
+}
+
+// ============================================================
+// FOOTBALL-DATA.ORG API (primary - official, free tier)
+// + ESPN API (photo lookup by player name)
+// ============================================================
+const FD_API_KEY = "0c5feba391ee439a84d82e7a7c801405";
+
+const FD_TEAM_MAP = {
+  "マンチェスターC": {fdId:65, comp:"PL"},
+  "アーセナル": {fdId:57, comp:"PL"},
+  "リヴァプール": {fdId:64, comp:"PL"},
+  "チェルシー": {fdId:61, comp:"PL"},
+  "マンチェスターU": {fdId:66, comp:"PL"},
+  "トッテナム": {fdId:73, comp:"PL"},
+  "ニューカッスル": {fdId:67, comp:"PL"},
+  "アストン・ヴィラ": {fdId:58, comp:"PL"},
+  "ウェストハム": {fdId:563, comp:"PL"},
+  "ブライトン": {fdId:397, comp:"PL"},
+  "フラム": {fdId:63, comp:"PL"},
+  "ウォルヴァーハンプトン": {fdId:76, comp:"PL"},
+  "クリスタルパレス": {fdId:354, comp:"PL"},
+  "ブレントフォード": {fdId:402, comp:"PL"},
+  "エヴァートン": {fdId:62, comp:"PL"},
+  "ボーンマス": {fdId:1044, comp:"PL"},
+  "ノッティンガム・フォレスト": {fdId:351, comp:"PL"},
+  "イプスウィッチ": {fdId:57, comp:"PL"},
+  "レスター": {fdId:338, comp:"PL"},
+  "サウサンプトン": {fdId:340, comp:"PL"},
+  "バルセロナ": {fdId:81, comp:"PD"},
+  "レアル・マドリード": {fdId:86, comp:"PD"},
+  "アトレティコ・マドリード": {fdId:78, comp:"PD"},
+  "セビージャ": {fdId:559, comp:"PD"},
+  "ビジャレアル": {fdId:94, comp:"PD"},
+  "レアル・ソシエダ": {fdId:92, comp:"PD"},
+  "ベティス": {fdId:90, comp:"PD"},
+  "アスレティック・クルブ": {fdId:77, comp:"PD"},
+  "バレンシア": {fdId:95, comp:"PD"},
+  "ジローナ": {fdId:298, comp:"PD"},
+  "マジョルカ": {fdId:89, comp:"PD"},
+  "アラベス": {fdId:263, comp:"PD"},
+  "ゲタフェ": {fdId:79, comp:"PD"},
+  "ラージョ": {fdId:87, comp:"PD"},
+  "セルタ": {fdId:558, comp:"PD"},
+  "オサスナ": {fdId:80, comp:"PD"},
+  "ラス・パルマス": {fdId:275, comp:"PD"},
+  "エスパニョール": {fdId:83, comp:"PD"},
+  "レガネス": {fdId:745, comp:"PD"},
+  "バジャドリード": {fdId:250, comp:"PD"},
+  "バイエルン・ミュンヘン": {fdId:5, comp:"BL1"},
+  "ボルシア・ドルトムント": {fdId:4, comp:"BL1"},
+  "RBライプツィヒ": {fdId:721, comp:"BL1"},
+  "レバークーゼン": {fdId:3, comp:"BL1"},
+  "フランクフルト": {fdId:19, comp:"BL1"},
+  "シュトゥットガルト": {fdId:10, comp:"BL1"},
+  "ヴォルフスブルク": {fdId:11, comp:"BL1"},
+  "ホッフェンハイム": {fdId:1275, comp:"BL1"},
+  "フライブルク": {fdId:17, comp:"BL1"},
+  "アウクスブルク": {fdId:16, comp:"BL1"},
+  "ボーフム": {fdId:36, comp:"BL1"},
+  "ウニオン・ベルリン": {fdId:28, comp:"BL1"},
+  "マインツ": {fdId:15, comp:"BL1"},
+  "ヴェルダー・ブレーメン": {fdId:12, comp:"BL1"},
+  "グラードバッハ": {fdId:18, comp:"BL1"},
+  "ハイデンハイム": {fdId:123, comp:"BL1"},
+  "ザンクト・パウリ": {fdId:29, comp:"BL1"},
+  "ケルン": {fdId:1, comp:"BL1"},
+  "インテル": {fdId:108, comp:"SA"},
+  "ミラン": {fdId:98, comp:"SA"},
+  "ユヴェントス": {fdId:109, comp:"SA"},
+  "ナポリ": {fdId:113, comp:"SA"},
+  "ローマ": {fdId:100, comp:"SA"},
+  "ラツィオ": {fdId:110, comp:"SA"},
+  "アタランタ": {fdId:102, comp:"SA"},
+  "フィオレンティーナ": {fdId:99, comp:"SA"},
+  "ボローニャ": {fdId:103, comp:"SA"},
+  "トリノ": {fdId:586, comp:"SA"},
+  "モンツァ": {fdId:674, comp:"SA"},
+  "エンポリ": {fdId:445, comp:"SA"},
+  "ウディネーゼ": {fdId:115, comp:"SA"},
+  "ジェノア": {fdId:107, comp:"SA"},
+  "ヴェローナ": {fdId:450, comp:"SA"},
+  "レッチェ": {fdId:454, comp:"SA"},
+  "パリSG": {fdId:524, comp:"FL1"},
+  "モナコ": {fdId:548, comp:"FL1"},
+  "マルセイユ": {fdId:516, comp:"FL1"},
+  "リヨン": {fdId:523, comp:"FL1"},
+  "リール": {fdId:521, comp:"FL1"},
+  "レンヌ": {fdId:511, comp:"FL1"},
+  "ニース": {fdId:522, comp:"FL1"},
+  "ストラスブール": {fdId:576, comp:"FL1"},
+  "ランス": {fdId:532, comp:"FL1"},
+  "ナント": {fdId:543, comp:"FL1"},
+  "ブレスト": {fdId:512, comp:"FL1"},
+  "トゥールーズ": {fdId:513, comp:"FL1"},
+  "ル・アーブル": {fdId:531, comp:"FL1"},
+  "サン=テティエンヌ": {fdId:527, comp:"FL1"},
+  "モンペリエ": {fdId:514, comp:"FL1"},
+  "アンジェ": {fdId:515, comp:"FL1"},
+};
+
+// Map football-data.org position strings to GK/DF/MF/FW
+function mapFDPosition(pos) {
+  if (!pos) return 'MF';
+  if (pos === 'Goalkeeper') return 'GK';
+  if (pos === 'Defence') return 'DF';
+  if (pos === 'Midfield') return 'MF';
+  if (pos === 'Offence' || pos === 'Forward') return 'FW';
+  return 'MF';
+}
+
+// Wikipedia photo lookup - reliable for top soccer players worldwide
+// Uses Wikipedia's API to find the player's page image
+const wikiPhotoCache = {};
+
+async function fetchWikiPhoto(playerName) {
+  if (wikiPhotoCache[playerName] !== undefined) return wikiPhotoCache[playerName];
+  
+  const queries = [
+    `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(playerName)}&prop=pageimages&format=json&pithumbsize=300&origin=*`,
+    `https://ja.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(playerName)}&prop=pageimages&format=json&pithumbsize=300&origin=*`
+  ];
+  
+  for (const url of queries) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const pages = Object.values(data?.query?.pages || {});
+      const thumb = pages[0]?.thumbnail?.source;
+      if (thumb) {
+        const hiRes = thumb.replace(/\/\d+px-/, '/300px-');
+        // Convert to base64 immediately so html2canvas can render it
+        const b64 = await urlToBase64(hiRes);
+        const result = b64 || hiRes; // fallback to URL if conversion fails
+        wikiPhotoCache[playerName] = result;
+        return result;
+      }
+    } catch(e) {}
+  }
+  
+  wikiPhotoCache[playerName] = null;
+  return null;
+}
+
+// Convert any image URL to base64 data URL
+// Works for CORS-enabled sources (Wikipedia, etc.)
+async function urlToBase64(url) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch(e) { return null; }
+}
+
+// Fetch squad from football-data.org
+// Free tier: no rate limit header needed for basic use (10 req/min)
+async function fetchFDSquad(teamName) {
+  const teamInfo = FD_TEAM_MAP[teamName];
+  if (!teamInfo) throw new Error(`No FD mapping for: ${teamName}`);
+  
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  
+  try {
+    const res = await fetch(
+      `https://api.football-data.org/v4/teams/${teamInfo.fdId}/`,
+      {
+        signal: controller.signal,
+        headers: {
+          'X-Auth-Token': FD_API_KEY
+        }
+      }
+    );
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`FD API: HTTP ${res.status}`);
+    const data = await res.json();
+    
+    // Response shape: { squad: [{ id, name, position, shirtNumber, nationality }] }
+    const squad = data.squad || [];
+    
+    const players = squad.map(p => {
+      const pos = mapFDPosition(p.position);
+      const num = parseInt(p.shirtNumber) || 0;
+      return { name: p.name, pos, num, img: null, fdId: p.id, fdComp: teamInfo.comp, source: 'fd' };
+    }).filter(p => p.name);
+
+    return players;
+  } catch(e) {
+    clearTimeout(timeout);
+    throw e;
+  }
+}
+
+// Fetch ESPN squad as fallback (for J1 and teams not in FD)
+function mapESPNPosition(posAbbr) {
+  if (!posAbbr) return 'MF';
+  const p = posAbbr.toUpperCase();
+  if (p === 'GK' || p === 'G') return 'GK';
+  if (['CB','LB','RB','LWB','RWB','D','SW','DF'].includes(p)) return 'DF';
+  if (['CM','CAM','CDM','LM','RM','DM','M','MF','AM'].includes(p)) return 'MF';
+  if (['ST','CF','LW','RW','SS','F','FW','W'].includes(p)) return 'FW';
+  return 'MF';
+}
+
+// ============================================================
+// Wikipedia日本語版からJリーグチームの選手リストを取得
+// ============================================================
+async function fetchWikiSquad(teamName) {
+  // Wikipedia APIでチームページを検索 → 選手セクションをパース
+  try {
+    // まずチームページを検索
+    const searchUrl = `https://ja.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(teamName + ' サッカー 選手')}&format=json&origin=*&srlimit=3`;
+    const searchRes = await fetch(searchUrl, { signal: AbortSignal.timeout(8000) });
+    if (!searchRes.ok) throw new Error('Wiki search failed');
+    const searchData = await searchRes.json();
+    
+    const hits = searchData.query?.search || [];
+    if (!hits.length) throw new Error('No wiki page found');
+    
+    // チームページのタイトルを探す（"FC" や "レッズ" 等を含む）
+    const pageTitle = hits[0].title;
+    
+    // ページのカテゴリー内の選手リストを取得（カテゴリ検索）
+    const catUrl = `https://ja.wikipedia.org/w/api.php?action=query&list=categorymembers&cmtitle=Category:${encodeURIComponent(teamName + 'の選手')}&format=json&origin=*&cmlimit=50&cmtype=page`;
+    const catRes = await fetch(catUrl, { signal: AbortSignal.timeout(8000) });
+    if (!catRes.ok) throw new Error('Wiki category failed');
+    const catData = await catRes.json();
+    
+    const members = catData.query?.categorymembers || [];
+    if (members.length < 3) throw new Error('Too few category members');
+    
+    // 選手ページから名前とポジションを取得
+    const players = members.slice(0, 40).map((m, i) => {
+      // カテゴリ名から名前を取得
+      const name = m.title.replace(/\s*\(.*\)/, '').trim();
+      return { name, pos: 'MF', num: 0, img: null, source: 'wiki', wikiTitle: m.title };
+    }).filter(p => p.name);
+    
+    return players;
+  } catch(e) {
+    console.warn('fetchWikiSquad failed:', e.message);
+    throw e;
+  }
+}
+
+
+async function fetchESPNSquad(teamName, teamId, league) {
+  const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/teams/${teamId}/roster`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12000);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!res.ok) throw new Error(`ESPN HTTP ${res.status}`);
+    const data = await res.json();
+    let athleteList = [];
+    if (Array.isArray(data.athletes)) athleteList = data.athletes;
+    else if (data.athletes) Object.values(data.athletes).forEach(g => {
+      if (Array.isArray(g)) athleteList.push(...g);
+      else if (g.items) athleteList.push(...g.items);
+    });
+    const players = athleteList.map(a => {
+      const athlete = a.athlete || a;
+      const espnId = athlete.id || a.id;
+      const name = athlete.displayName || athlete.fullName || '';
+      const pos = mapESPNPosition(athlete.position?.abbreviation || a.position?.abbreviation);
+      const num = parseInt(athlete.jersey || a.jersey) || 0;
+      // Check if headshot URL is provided directly in response (more reliable)
+      const headshotHref = athlete.headshot?.href || a.headshot?.href || null;
+      // Only use ESPN CDN if headshot href is provided directly; otherwise use wiki
+      const img = headshotHref || null;
+      return { name, pos, num, img, espnId, source: 'espn' };
+    }).filter(p => p.name);
+    if (players.length < 3) throw new Error('Too few players');
+    return players;
+  } catch(e) { clearTimeout(timeout); throw e; }
+}
+
+
+// ============================================================
+// PRESET PLAYER DATA (with Transfermarkt image URLs)
+// Images: ESPN CDN (https://a.espncdn.com/i/headshots/soccer/players/full/{id}.png)
+// ============================================================
+// PASTE INTO CODE:
+const TEAM_PRESETS = {
+  "バルセロナ": [
+    {name:"テア・シュテーゲン",num:1,pos:"GK"},
+    {name:"イニャキ・ペーニャ",num:13,pos:"GK"},
+    {name:"パウ・クバルシ",num:2,pos:"DF"},
+    {name:"ロナルド・アラウホ",num:4,pos:"DF"},
+    {name:"アンドレアス・クリステンセン",num:15,pos:"DF"},
+    {name:"ジュール・クンデ",num:23,pos:"DF"},
+    {name:"エリック・ガルシア",num:24,pos:"DF"},
+    {name:"アレハンドロ・バルデ",num:3,pos:"DF"},
+    {name:"ペドリ",num:8,pos:"MF"},
+    {name:"フレンキー・デ・ヨング",num:21,pos:"MF"},
+    {name:"ガビ",num:6,pos:"MF"},
+    {name:"マルク・カサド",num:14,pos:"MF"},
+    {name:"ダニ・オルモ",num:20,pos:"MF"},
+    {name:"マルコス・アロンソ",num:17,pos:"MF"},
+    {name:"ラミン・ヤマル",num:19,pos:"FW"},
+    {name:"ラフィーニャ",num:11,pos:"FW"},
+    {name:"ロベルト・レバンドフスキ",num:9,pos:"FW"},
+    {name:"アンス・ファティ",num:10,pos:"FW"},
+    {name:"フェラン・トーレス",num:7,pos:"FW"},
+    {name:"パウ・ビクトル",num:12,pos:"FW"},
+  ],
+  "レアル・マドリード": [
+    {name:"ルニン",num:25,pos:"GK"},
+    {name:"クルトワ",num:1,pos:"GK"},
+    {name:"カルバハル",num:2,pos:"DF"},
+    {name:"ミリトン",num:3,pos:"DF"},
+    {name:"アラバ",num:4,pos:"DF"},
+    {name:"リュディガー",num:22,pos:"DF"},
+    {name:"ガルシア・フラン",num:23,pos:"DF"},
+    {name:"フェルランド・メンディ",num:23,pos:"DF"},
+    {name:"チュアメニ",num:14,pos:"MF"},
+    {name:"バルベルデ",num:15,pos:"MF"},
+    {name:"モドリッチ",num:10,pos:"MF"},
+    {name:"クロース",num:8,pos:"MF"},
+    {name:"ベリンガム",num:5,pos:"MF"},
+    {name:"カマヴィンガ",num:12,pos:"MF"},
+    {name:"ビニシウス",num:7,pos:"FW"},
+    {name:"ロドリゴ",num:11,pos:"FW"},
+    {name:"ムバッペ",num:9,pos:"FW"},
+    {name:"ブラヒム・ディアス",num:21,pos:"FW"},
+    {name:"ホセル",num:18,pos:"FW"},
+  ],
+  "アトレティコ・マドリード": [
+    {name:"オブラク",num:13,pos:"GK"},
+    {name:"ヒメネス",num:2,pos:"DF"},
+    {name:"ヴィツェル",num:23,pos:"MF"},
+    {name:"モリーナ",num:16,pos:"DF"},
+    {name:"ヘルモソ",num:22,pos:"DF"},
+    {name:"デパウル",num:6,pos:"MF"},
+    {name:"コケ",num:14,pos:"MF"},
+    {name:"レマル",num:8,pos:"MF"},
+    {name:"サウール",num:8,pos:"MF"},
+    {name:"グリーズマン",num:7,pos:"FW"},
+    {name:"モラタ",num:19,pos:"FW"},
+    {name:"コレア",num:10,pos:"FW"},
+    {name:"メメット・チェリク",num:4,pos:"DF"},
+    {name:"アジュン・ナウエル",num:11,pos:"FW"},
+    {name:"ジュリアン・アルバレス",num:9,pos:"FW"},
+  ],
+  "マンチェスターC": [
+    {name:"エデルソン",num:31,pos:"GK"},
+    {name:"ウォーカー",num:2,pos:"DF"},
+    {name:"マヌエル・アカンジ",num:25,pos:"DF"},
+    {name:"ルベン・ディアス",num:3,pos:"DF"},
+    {name:"グバルディオル",num:24,pos:"DF"},
+    {name:"ジョン・ストーンズ",num:5,pos:"DF"},
+    {name:"ロドリ",num:16,pos:"MF"},
+    {name:"ベルナルド・シルバ",num:20,pos:"MF"},
+    {name:"デ・ブライネ",num:17,pos:"MF"},
+    {name:"コバチッチ",num:8,pos:"MF"},
+    {name:"フォーデン",num:47,pos:"MF"},
+    {name:"ドクー",num:11,pos:"FW"},
+    {name:"ハーランド",num:9,pos:"FW"},
+    {name:"ジャック・グリーリッシュ",num:10,pos:"FW"},
+    {name:"サヴィーニョ",num:26,pos:"FW"},
+  ],
+  "アーセナル": [
+    {name:"ラヤ",num:22,pos:"GK"},
+    {name:"ベン・ホワイト",num:4,pos:"DF"},
+    {name:"サリバ",num:12,pos:"DF"},
+    {name:"マガリャンイス",num:6,pos:"DF"},
+    {name:"ジンチェンコ",num:35,pos:"DF"},
+    {name:"オデガール",num:8,pos:"MF"},
+    {name:"トーマス・パーティ",num:5,pos:"MF"},
+    {name:"マルティネッリ",num:11,pos:"FW"},
+    {name:"サカ",num:7,pos:"FW"},
+    {name:"ハヴァーツ",num:29,pos:"MF"},
+    {name:"レイス・ネルソン",num:24,pos:"FW"},
+    {name:"ヘインズ",num:14,pos:"DF"},
+    {name:"ハウスブリス",num:2,pos:"DF"},
+    {name:"ジェズース",num:9,pos:"FW"},
+    {name:"ティンバー",num:32,pos:"DF"},
+  ],
+  "リヴァプール": [
+    {name:"アリソン",num:1,pos:"GK"},
+    {name:"アレクサンダー=アーノルド",num:66,pos:"DF"},
+    {name:"ファン・ダイク",num:4,pos:"DF"},
+    {name:"コナーテ",num:5,pos:"DF"},
+    {name:"ロバートソン",num:26,pos:"DF"},
+    {name:"マック・アリスター",num:10,pos:"MF"},
+    {name:"ガクポ",num:18,pos:"FW"},
+    {name:"ソボスライ",num:8,pos:"MF"},
+    {name:"エリオット",num:19,pos:"MF"},
+    {name:"サラー",num:11,pos:"FW"},
+    {name:"ディオゴ・ジョタ",num:20,pos:"FW"},
+    {name:"ヌニェス",num:9,pos:"FW"},
+    {name:"ルイス・ディアス",num:7,pos:"FW"},
+    {name:"グラヴェンベルフ",num:38,pos:"MF"},
+    {name:"クアンサー",num:2,pos:"DF"},
+  ],
+  "チェルシー": [
+    {name:"サンチェス",num:1,pos:"GK"},
+    {name:"リース・ジェームズ",num:24,pos:"DF"},
+    {name:"チアゴ・シウバ",num:6,pos:"DF"},
+    {name:"コルウィル",num:26,pos:"DF"},
+    {name:"ベン・チルウェル",num:21,pos:"DF"},
+    {name:"エンソ・フェルナンデス",num:8,pos:"MF"},
+    {name:"コナー・ギャラガー",num:23,pos:"MF"},
+    {name:"モイセス・カイセド",num:25,pos:"MF"},
+    {name:"コール・パーマー",num:20,pos:"MF"},
+    {name:"ニコラス・ジャクソン",num:15,pos:"FW"},
+    {name:"スターリング",num:7,pos:"FW"},
+    {name:"ムドリク",num:10,pos:"FW"},
+    {name:"ペドロ・ネト",num:14,pos:"FW"},
+    {name:"ジャクソン",num:15,pos:"FW"},
+    {name:"サンチョ",num:19,pos:"FW"},
+  ],
+  "バイエルン・ミュンヘン": [
+    {name:"ノイアー",num:1,pos:"GK"},
+    {name:"ウルライヒ",num:26,pos:"GK"},
+    {name:"コンパニー監督",num:0,pos:"DF"},
+    {name:"キム・ミンジェ",num:3,pos:"DF"},
+    {name:"ダヨ・ウパメカノ",num:2,pos:"DF"},
+    {name:"アルフォンソ・デイビス",num:19,pos:"DF"},
+    {name:"ノウシル",num:12,pos:"DF"},
+    {name:"コナン・チュマ",num:0,pos:"DF"},
+    {name:"レオン・ゴレツカ",num:8,pos:"MF"},
+    {name:"ジャマル・ムシアラ",num:42,pos:"MF"},
+    {name:"トーマス・ミュラー",num:25,pos:"FW"},
+    {name:"ハリー・ケイン",num:9,pos:"FW"},
+    {name:"コンパニー",num:38,pos:"DF"},
+    {name:"サネ",num:10,pos:"FW"},
+    {name:"ニャブリ",num:7,pos:"FW"},
+    {name:"コミン",num:5,pos:"DF"},
+    {name:"キングスレー・コマン",num:11,pos:"FW"},
+    {name:"マズラウィ",num:40,pos:"DF"},
+  ],
+  "ボルシア・ドルトムント": [
+    {name:"コベル",num:1,pos:"GK"},
+    {name:"リエルソン",num:2,pos:"DF"},
+    {name:"フンメルス",num:15,pos:"DF"},
+    {name:"シュロッタービーク",num:4,pos:"DF"},
+    {name:"ライナー",num:30,pos:"DF"},
+    {name:"ニコ・シュルツ",num:14,pos:"DF"},
+    {name:"カン",num:8,pos:"MF"},
+    {name:"ジュード・ベリンガム",num:22,pos:"MF"},
+    {name:"ムフタル",num:9,pos:"MF"},
+    {name:"ロイス",num:11,pos:"FW"},
+    {name:"アデイェミ",num:27,pos:"FW"},
+    {name:"ブラント",num:10,pos:"MF"},
+    {name:"マーレン",num:25,pos:"FW"},
+    {name:"ニクラス・フュルクルーク",num:9,pos:"FW"},
+  ],
+  "インテル": [
+    {name:"ゾマー",num:1,pos:"GK"},
+    {name:"パヴァール",num:28,pos:"DF"},
+    {name:"デ・フライ",num:6,pos:"DF"},
+    {name:"バストーニ",num:95,pos:"DF"},
+    {name:"ディマルコ",num:32,pos:"DF"},
+    {name:"バレッラ",num:23,pos:"MF"},
+    {name:"チャルハノール",num:20,pos:"MF"},
+    {name:"ムヒタリャン",num:22,pos:"MF"},
+    {name:"ダウン・フラッテジ",num:16,pos:"MF"},
+    {name:"ラウタロ・マルティネス",num:10,pos:"FW"},
+    {name:"マルクス・テュラム",num:9,pos:"FW"},
+    {name:"アシュラフ・ハキミ",num:2,pos:"DF"},
+    {name:"ミキタリアン",num:22,pos:"MF"},
+    {name:"アルナウトビッチ",num:8,pos:"FW"},
+    {name:"クアドラード",num:11,pos:"FW"},
+  ],
+  "ミラン": [
+    {name:"マイニャン",num:16,pos:"GK"},
+    {name:"カラブリア",num:2,pos:"DF"},
+    {name:"マレスカ",num:19,pos:"DF"},
+    {name:"トモリ",num:23,pos:"DF"},
+    {name:"テオ・エルナンデス",num:19,pos:"DF"},
+    {name:"ティジャニ・レインデルス",num:14,pos:"MF"},
+    {name:"イスマエル・ベニャチャール",num:5,pos:"MF"},
+    {name:"ロフタス=チーク",num:8,pos:"MF"},
+    {name:"プリシッチ",num:11,pos:"FW"},
+    {name:"ジルー",num:9,pos:"FW"},
+    {name:"レオン",num:10,pos:"FW"},
+    {name:"プリシッチ",num:11,pos:"FW"},
+    {name:"アブラハム",num:90,pos:"FW"},
+    {name:"フロフスキー",num:7,pos:"FW"},
+  ],
+  "パリSG": [
+    {name:"ドンナルンマ",num:99,pos:"GK"},
+    {name:"アシュラフ・ハキミ",num:2,pos:"DF"},
+    {name:"マルキーニョス",num:5,pos:"DF"},
+    {name:"ルーカス・ベラルド",num:11,pos:"DF"},
+    {name:"ヌノ・メンデス",num:25,pos:"DF"},
+    {name:"ファビアン・ルイス",num:8,pos:"MF"},
+    {name:"ヴィティーニャ",num:17,pos:"MF"},
+    {name:"ウォーレン・ザイレ",num:33,pos:"MF"},
+    {name:"ジョアン・ネベス",num:87,pos:"MF"},
+    {name:"ムバッペ",num:7,pos:"FW"},
+    {name:"ランダル・コロ・ムアニ",num:23,pos:"FW"},
+    {name:"ゴンサロ・ラモス",num:9,pos:"FW"},
+    {name:"ブラドレ・バルコラ",num:29,pos:"FW"},
+    {name:"デシレ・ドウエ",num:11,pos:"FW"},
+  ],
+  "浦和レッズ": [
+    {name:"西川周作",num:1,pos:"GK"},
+    {name:"酒井宏樹",num:2,pos:"DF"},
+    {name:"ショルツ",num:4,pos:"DF"},
+    {name:"マリウス・ホイブラーテン",num:5,pos:"DF"},
+    {name:"大畑歩夢",num:17,pos:"DF"},
+    {name:"石原広教",num:24,pos:"DF"},
+    {name:"伊藤敦樹",num:8,pos:"MF"},
+    {name:"岩尾憲",num:3,pos:"MF"},
+    {name:"小泉佳穂",num:14,pos:"MF"},
+    {name:"関根貴大",num:19,pos:"FW"},
+    {name:"松尾佑介",num:11,pos:"FW"},
+    {name:"興梠慎三",num:13,pos:"FW"},
+    {name:"ホセカンテ",num:9,pos:"FW"},
+    {name:"チアゴ・サヴィオ",num:20,pos:"FW"},
+    {name:"グスタフソン",num:21,pos:"MF"},
+  ],
+  "鹿島アントラーズ": [
+    {name:"早川友基",num:1,pos:"GK"},
+    {name:"常本佳吾",num:22,pos:"DF"},
+    {name:"植田直通",num:4,pos:"DF"},
+    {name:"関川郁万",num:3,pos:"DF"},
+    {name:"安西幸輝",num:16,pos:"DF"},
+    {name:"三竿健斗",num:20,pos:"MF"},
+    {name:"佐野海舟",num:8,pos:"MF"},
+    {name:"樋口雄太",num:7,pos:"MF"},
+    {name:"名古新太郎",num:17,pos:"MF"},
+    {name:"師岡柊生",num:37,pos:"MF"},
+    {name:"鈴木優磨",num:40,pos:"FW"},
+    {name:"知念慶",num:9,pos:"FW"},
+    {name:"垣田裕暉",num:30,pos:"FW"},
+    {name:"松村優太",num:18,pos:"FW"},
+    {name:"チャヴリッチ",num:11,pos:"FW"},
+  ],
+  "横浜F・マリノス": [
+    {name:"一森純",num:1,pos:"GK"},
+    {name:"松原健",num:2,pos:"DF"},
+    {name:"エドゥアルド",num:5,pos:"DF"},
+    {name:"上島拓巳",num:4,pos:"DF"},
+    {name:"小池龍太",num:3,pos:"DF"},
+    {name:"渡辺皓太",num:14,pos:"MF"},
+    {name:"喜田拓也",num:6,pos:"MF"},
+    {name:"西村拓真",num:18,pos:"MF"},
+    {name:"エウベル",num:11,pos:"FW"},
+    {name:"アンデルソン・ロペス",num:9,pos:"FW"},
+    {name:"ヤン・マテウス",num:7,pos:"FW"},
+    {name:"植中朝日",num:19,pos:"FW"},
+    {name:"宮市亮",num:23,pos:"FW"},
+    {name:"永戸勝也",num:13,pos:"DF"},
+    {name:"天野純",num:25,pos:"MF"},
+  ],
+  "FC東京": [
+    {name:"スウォビク",num:1,pos:"GK"},
+    {name:"長友佑都",num:5,pos:"DF"},
+    {name:"木本恭生",num:3,pos:"DF"},
+    {name:"森重真人",num:4,pos:"DF"},
+    {name:"バングーナガンデ佳史扶",num:15,pos:"DF"},
+    {name:"荒木遼太郎",num:10,pos:"MF"},
+    {name:"東慶悟",num:8,pos:"MF"},
+    {name:"安部柊斗",num:16,pos:"MF"},
+    {name:"俵積田晃太",num:35,pos:"MF"},
+    {name:"仲川輝人",num:11,pos:"FW"},
+    {name:"ディエゴ・オリヴェイラ",num:9,pos:"FW"},
+    {name:"渡邊凌磨",num:41,pos:"MF"},
+    {name:"遠藤渓太",num:7,pos:"FW"},
+    {name:"小柏剛",num:11,pos:"FW"},
+    {name:"レアンドロ",num:8,pos:"FW"},
+  ],
+  "川崎フロンターレ": [
+    {name:"上福元直人",num:1,pos:"GK"},
+    {name:"山根視来",num:2,pos:"DF"},
+    {name:"谷口彰悟",num:5,pos:"DF"},
+    {name:"車屋紳太郎",num:7,pos:"DF"},
+    {name:"佐々木旭",num:15,pos:"DF"},
+    {name:"橘田健人",num:16,pos:"MF"},
+    {name:"脇坂泰斗",num:14,pos:"MF"},
+    {name:"家長昭博",num:41,pos:"MF"},
+    {name:"瀬川祐輔",num:19,pos:"FW"},
+    {name:"マルシーニョ",num:23,pos:"FW"},
+    {name:"山田新",num:30,pos:"FW"},
+    {name:"エリソン",num:9,pos:"FW"},
+    {name:"宮代大聖",num:18,pos:"FW"},
+    {name:"遠野大弥",num:11,pos:"MF"},
+    {name:"チャナティップ",num:10,pos:"MF"},
+  ],
+  "ガンバ大阪": [
+    {name:"東口順昭",num:1,pos:"GK"},
+    {name:"三浦弦太",num:3,pos:"DF"},
+    {name:"クォン・ギョンウォン",num:5,pos:"DF"},
+    {name:"半田陸",num:17,pos:"DF"},
+    {name:"黒川圭介",num:7,pos:"DF"},
+    {name:"ダワン",num:4,pos:"MF"},
+    {name:"齊藤未月",num:8,pos:"MF"},
+    {name:"宇佐美貴史",num:39,pos:"FW"},
+    {name:"ウェルトン",num:11,pos:"FW"},
+    {name:"山下諒也",num:19,pos:"FW"},
+    {name:"食野亮太郎",num:33,pos:"FW"},
+    {name:"鈴木武蔵",num:9,pos:"FW"},
+    {name:"坂本一彩",num:16,pos:"FW"},
+    {name:"江川湧清",num:2,pos:"DF"},
+    {name:"岸本武流",num:28,pos:"MF"},
+  ],
+  "日本": [
+    {name:"鈴木彩艶",num:1,pos:"GK"},
+    {name:"大迫敬介",num:12,pos:"GK"},
+    {name:"菅原由勢",num:2,pos:"DF"},
+    {name:"冨安健洋",num:3,pos:"DF"},
+    {name:"板倉滉",num:4,pos:"DF"},
+    {name:"谷口彰悟",num:22,pos:"DF"},
+    {name:"長谷部誠",num:17,pos:"DF"},
+    {name:"中山雄太",num:5,pos:"DF"},
+    {name:"遠藤航",num:6,pos:"MF"},
+    {name:"守田英正",num:14,pos:"MF"},
+    {name:"田中碧",num:17,pos:"MF"},
+    {name:"鎌田大地",num:16,pos:"MF"},
+    {name:"三笘薫",num:9,pos:"FW"},
+    {name:"久保建英",num:10,pos:"FW"},
+    {name:"伊東純也",num:8,pos:"FW"},
+    {name:"上田綺世",num:15,pos:"FW"},
+    {name:"前田大然",num:13,pos:"FW"},
+    {name:"南野拓実",num:11,pos:"FW"},
+    {name:"浅野拓磨",num:18,pos:"FW"},
+    {name:"堂安律",num:7,pos:"FW"},
+    {name:"西村拓真",num:19,pos:"FW"},
+  ],
+  "ブラジル": [
+    {name:"アリソン",num:1,pos:"GK"},
+    {name:"エデルソン",num:23,pos:"GK"},
+    {name:"ダニーロ",num:2,pos:"DF"},
+    {name:"カセミロ",num:5,pos:"MF"},
+    {name:"チアゴ・シウバ",num:3,pos:"DF"},
+    {name:"マルキーニョス",num:4,pos:"DF"},
+    {name:"アレックス・サンドロ",num:6,pos:"DF"},
+    {name:"フレッジ",num:15,pos:"MF"},
+    {name:"ファビーニョ",num:13,pos:"MF"},
+    {name:"ルーカス・パケタ",num:10,pos:"MF"},
+    {name:"ヴィニシウス",num:20,pos:"FW"},
+    {name:"ロドリゴ",num:11,pos:"FW"},
+    {name:"ネイマール",num:10,pos:"FW"},
+    {name:"ガブリエル・ジェズース",num:9,pos:"FW"},
+    {name:"リシャルリソン",num:19,pos:"FW"},
+    {name:"ガブリエル・マルティネリ",num:17,pos:"FW"},
+  ],
+  "フランス": [
+    {name:"ロリス",num:1,pos:"GK"},
+    {name:"マイニャン",num:16,pos:"GK"},
+    {name:"パヴァール",num:2,pos:"DF"},
+    {name:"ヴァラン",num:4,pos:"DF"},
+    {name:"キャリアン・ムバッペ",num:10,pos:"FW"},
+    {name:"テオ・エルナンデス",num:22,pos:"DF"},
+    {name:"エムバペ",num:10,pos:"FW"},
+    {name:"ラビオ",num:8,pos:"MF"},
+    {name:"グリーズマン",num:7,pos:"FW"},
+    {name:"ジルー",num:9,pos:"FW"},
+    {name:"コナテ",num:5,pos:"DF"},
+    {name:"カマヴィンガ",num:16,pos:"MF"},
+    {name:"デンベレ",num:11,pos:"FW"},
+    {name:"カンテ",num:13,pos:"MF"},
+    {name:"ポグバ",num:6,pos:"MF"},
+    {name:"ベンゼマ",num:19,pos:"FW"},
+  ],
+  "アルゼンチン": [
+    {name:"エミリアーノ・マルティネス",num:23,pos:"GK"},
+    {name:"モリーナ",num:26,pos:"DF"},
+    {name:"クリスティアン・ロメロ",num:13,pos:"DF"},
+    {name:"リサンドロ・マルティネス",num:25,pos:"DF"},
+    {name:"タグリアフィコ",num:3,pos:"DF"},
+    {name:"デ・パウル",num:7,pos:"MF"},
+    {name:"エンソ・フェルナンデス",num:24,pos:"MF"},
+    {name:"マック・アリスター",num:20,pos:"MF"},
+    {name:"ジュリアン・アルバレス",num:9,pos:"FW"},
+    {name:"メッシ",num:10,pos:"FW"},
+    {name:"ラウタロ・マルティネス",num:22,pos:"FW"},
+    {name:"ディ・マリア",num:11,pos:"FW"},
+    {name:"ロ・チェルソ",num:18,pos:"MF"},
+    {name:"コレア",num:19,pos:"FW"},
+  ],
+  "ドイツ": [
+    {name:"ノイアー",num:1,pos:"GK"},
+    {name:"テア・シュテーゲン",num:12,pos:"GK"},
+    {name:"キミッヒ",num:6,pos:"DF"},
+    {name:"リュディガー",num:2,pos:"DF"},
+    {name:"ジュール",num:16,pos:"DF"},
+    {name:"ラウム",num:3,pos:"DF"},
+    {name:"ゴレツカ",num:8,pos:"MF"},
+    {name:"チュアメニ",num:0,pos:"MF"},
+    {name:"クロース",num:8,pos:"MF"},
+    {name:"ムシアラ",num:10,pos:"MF"},
+    {name:"ハヴァーツ",num:7,pos:"MF"},
+    {name:"ムラーニー",num:13,pos:"MF"},
+    {name:"ニャブリ",num:9,pos:"FW"},
+    {name:"ヴェルナー",num:11,pos:"FW"},
+    {name:"フュルクルーク",num:19,pos:"FW"},
+  ],
+  "スペイン": [
+    {name:"シモン",num:23,pos:"GK"},
+    {name:"カルバハル",num:2,pos:"DF"},
+    {name:"パウ・トーレス",num:4,pos:"DF"},
+    {name:"ラポルタ",num:24,pos:"DF"},
+    {name:"グリマルド",num:3,pos:"DF"},
+    {name:"ファビアン・ルイス",num:8,pos:"MF"},
+    {name:"ロドリ",num:16,pos:"MF"},
+    {name:"ペドリ",num:26,pos:"MF"},
+    {name:"ヤマル",num:19,pos:"FW"},
+    {name:"ニコ・ウィリアムス",num:17,pos:"FW"},
+    {name:"モラタ",num:7,pos:"FW"},
+    {name:"オルモ",num:10,pos:"MF"},
+    {name:"フォファナ",num:22,pos:"DF"},
+    {name:"ミケル・メリーノ",num:18,pos:"MF"},
+  ],
+};
+
+function getPresetPlayers(teamName) {
+  const players = TEAM_PRESETS[teamName];
+  if (players && players.length > 0) return players;
+  return [];
+}
+
+
+// ============================================================
+// PLAYER LIST RENDER
+// ============================================================
+function renderPlayerList() {
+  const list = document.getElementById('playerList');
+  const filter = document.getElementById('playerSearchInput').value.toLowerCase().trim();
+
+  if (!allPlayers.length) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:0.78rem;padding:8px;text-align:center;">'
+      + (filter ? '選手が見つかりません（チームを選択すると横断検索できます）' : 'チームを選択してください')
+      + '</div>';
+    return;
+  }
+
+  const inLineup = new Set(Object.values(lineup).filter(Boolean).map(p => p.name));
+  const filtered = allPlayers.filter(p => {
+    if (!filter) return true;
+    if (p.name && p.name.toLowerCase().includes(filter)) return true;
+    if (p.pos && p.pos.toLowerCase().includes(filter)) return true;
+    if (p.num && String(p.num).includes(filter)) return true;
+    return false;
+  });
+
+  list.innerHTML = '';
+  filtered.forEach(p => {
+    const div = document.createElement('div');
+    const isIn = inLineup.has(p.name);
+    div.className = 'player-item' + (isIn ? ' in-lineup' : '');
+    div.innerHTML = `
+      <span class="p-num">${p.num||''}</span>
+      <div class="p-avatar">${renderAvatar(p)}</div>
+      <div class="p-info">
+        <div class="p-name">${p.name}</div>
+        <div class="p-meta">${p.pos||''}${isIn?' · 配置済':''}${p.custom?' · カスタム':''}</div>
+      </div>
+      ${p.custom ? `<button class="p-del" title="削除" onclick="deleteCustomPlayer('${p.name}',event)">✕</button>` : ''}
+    `;
+    if (!isIn) {
+      div.onclick = () => openSlotPicker(p);
+      // D&D: 選手リストからピッチ・ベンチへドラッグ可能
+      div.draggable = true;
+      div.addEventListener('dragstart', e => {
+        e.dataTransfer.effectAllowed = 'copy';
+        e.dataTransfer.setData('text/plain', JSON.stringify({src:'playerList', player: p}));
+        setTimeout(() => div.classList.add('dragging-src'), 0);
+      });
+      div.addEventListener('dragend', () => div.classList.remove('dragging-src'));
+      div.addEventListener('touchstart', e => onTouchStart(e, null, 'playerList', activeTeam, p), {passive:false});
+    }
+    list.appendChild(div);
+  });
+}
+
+function filterPlayerList() {
+  renderPlayerList();
+}
+
+function renderAvatar(p) {
+  if (p.img) {
+    return `<img src="${p.img}" onerror="this.parentNode.innerHTML='${getInitials(p.name)}'" loading="lazy">`;
+  }
+  return getInitials(p.name);
+}
+
+function getInitials(name) {
+  if (!name) return '👤';
+  const words = name.trim().split(/\s+/);
+  if (words.length >= 2) return (words[0][0] + words[words.length-1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+// ============================================================
+// PITCH RENDER
+// ============================================================
+
+// ============================================================
+// PLACEMENT MODE: player-first or position-first
+// ============================================================
+let placementMode = 'player'; // 'player' | 'position'
+
+function setPlacementMode(mode) {
+  placementMode = mode;
+  document.getElementById('modePlayerFirst').classList.toggle('active', mode === 'player');
+  document.getElementById('modePosFirst').classList.toggle('active', mode === 'position');
+  document.getElementById('playerPickerPanel').style.display = mode === 'player' ? 'flex' : 'none';
+  document.getElementById('positionPickerPanel').style.display = mode === 'position' ? 'flex' : 'none';
+  if (mode === 'position') renderPositionList();
+}
+
+function renderPositionList() {
+  const list = document.getElementById('positionList');
+  list.innerHTML = '';
+  const isAway = activeTeam === 'away';
+  const tLineup = isAway ? opponentLineup : lineup;
+  const tFormation = isAway ? opponentFormation : currentFormation;
+  const positions = FORMATIONS[tFormation].positions;
+
+  positions.forEach((pos, i) => {
+    const player = tLineup[i];
+    const btn = document.createElement('button');
+    btn.className = 'pos-slot-btn' + (player ? ' slot-filled' : '');
+
+    const badgeEl = document.createElement('div');
+    badgeEl.className = 'pos-badge' + (player ? '' : ' empty');
+    if (player && player.img) {
+      const img = document.createElement('img');
+      img.src = player.img;
+      img.onerror = function() { this.outerHTML = '<span>' + getInitials(player.name) + '</span>'; };
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      badgeEl.appendChild(img);
+    } else if (player) {
+      badgeEl.textContent = getInitials(player.name);
+    } else {
+      badgeEl.textContent = pos.role;
+    }
+
+    const infoEl = document.createElement('div');
+    infoEl.style.cssText = 'flex:1;min-width:0;text-align:left;';
+    infoEl.innerHTML = '<div style="font-size:0.8rem;font-weight:700;">'
+      + (player ? player.name : '— 未選択 —')
+      + '</div><div style="font-size:0.65rem;color:var(--text-dim);">'
+      + pos.role
+      + (player ? ' · ' + player.pos : '')
+      + '</div>';
+
+    btn.appendChild(badgeEl);
+    btn.appendChild(infoEl);
+
+    if (player) {
+      const clearBtn = document.createElement('span');
+      clearBtn.style.cssText = 'color:var(--text-dim);font-size:0.75rem;padding:0 4px;cursor:pointer;';
+      clearBtn.textContent = '✕';
+      clearBtn.onclick = (e) => {
+        e.stopPropagation();
+        if (isAway) delete opponentLineup[i]; else delete lineup[i];
+        renderPitch(); renderLineupList(); renderPositionList(); updateLineupCount();
+      };
+      btn.appendChild(clearBtn);
+    }
+
+    btn.onclick = () => openSlotModal(i, activeTeam);
+    list.appendChild(btn);
+  });
+}
+function renderPitch() {
+  renderTeamPitch('home');
+  if (opponentEnabled) renderTeamPitch('away');
+  updateLineupCount();
+  if (typeof placementMode !== 'undefined' && placementMode === 'position') {
+    renderPositionList();
+  }
+}
+
+function renderTeamPitch(team) {
+  const isHome = team === 'home';
+  const containerId = isHome ? 'pitchPlayers' : 'opponentPitchPlayers';
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const tLineup = isHome ? lineup : opponentLineup;
+  const tFormation = isHome ? currentFormation : opponentFormation;
+  const positions = FORMATIONS[tFormation].positions;
+
+  positions.forEach((pos, i) => {
+    const player = tLineup[i];
+    const div = document.createElement('div');
+    div.className = 'pitch-player';
+    div.dataset.slot = i;
+    div.dataset.team = team;
+    div.style.left = pos.x + '%';
+    div.style.top = pos.y + '%';
+
+    const uid = team + '_' + i;
+    if (player) {
+      const initials = getInitials(player.name);
+      div.innerHTML = `
+        <div class="pp-icon" id="ppicon-${uid}">
+          ${player.img
+            ? `<img src="${player.img}" onerror="this.onerror=null;this.style.display='none';document.getElementById('ppinitials-${uid}').style.display='flex';" loading="lazy" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+            : ''}
+          <span id="ppinitials-${uid}" style="display:${player.img?'none':'flex'};font-size:0.7rem;font-weight:700;align-items:center;justify-content:center;width:100%;height:100%;border-radius:50%;">${initials}</span>
+          ${player.num ? `<span class="pp-badge">${player.num}</span>` : ''}
+          <button class="pp-remove" onclick="removePlayer(${i},'${team}',event)">✕</button>
+        </div>
+        <div class="pp-label" ondblclick="editPlayerName(${i},'${team}',event)" title="ダブルクリックで名前編集">${shortName(player.name)}</div>
+      `;
+    } else {
+      div.innerHTML = `
+        <div class="pp-icon empty">${pos.role}</div>
+        <div class="pp-label empty">クリックして配置</div>
+      `;
+    }
+    div.onclick = (e) => {
+      if (e.target.classList.contains('pp-remove')) return;
+      if (dragState && dragState.active) return;
+      if (opponentEnabled) setActiveTeam(team);
+      openSlotModal(i, team);
+    };
+    if (player) {
+      div.draggable = true;
+      div.addEventListener('dragstart', e => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', JSON.stringify({src:'pitch',slot:i,team}));
+        dragState.active = true; dragState.slot = i;
+        setTimeout(() => div.classList.add('dragging'), 0);
+      });
+      div.addEventListener('dragend', e => {
+        dragState.active = false;
+        document.querySelectorAll('.dragging,.drag-over').forEach(el => el.classList.remove('dragging','drag-over'));
+      });
+    }
+    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', e => div.classList.remove('drag-over'));
+    div.addEventListener('drop', e => {
+      e.preventDefault();
+      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      try {
+        const d = JSON.parse(e.dataTransfer.getData('text/plain'));
+        const tL = team==='away' ? opponentLineup : lineup;
+        if ((d.src==='pitch'||d.src==='lineup') && d.team===team && d.slot !== i) {
+          // ピッチ内・リスト内でのスワップ
+          const tmp=tL[d.slot]; tL[d.slot]=tL[i]; tL[i]=tmp;
+          renderPitch(); renderLineupList(); renderPlayerList(); updateLineupCount();
+        } else if (d.src==='playerList' && d.player) {
+          // 選手リストからピッチへ配置
+          const inLineup = Object.values(tL).filter(Boolean).map(p=>p.name);
+          if (!inLineup.includes(d.player.name)) {
+            tL[i] = d.player;
+            renderPitch(); renderLineupList(); renderPlayerList(); updateLineupCount();
+          }
+        } else if (d.src==='bench' && d.team===team) {
+          // ベンチからピッチへ交代
+          const tB = team==='away' ? opponentBench : bench;
+          const benchPlayer = tB[d.benchIdx];
+          if (benchPlayer) {
+            const old = tL[i] || null;
+            tL[i] = benchPlayer;
+            tB[d.benchIdx] = old;
+            renderPitch(); renderLineupList(); updateLineupCount();
+          }
+        }
+      } catch(ex) {}
+      dragState.active = false;
+    });
+    div.addEventListener('touchstart', e => onTouchStart(e, i, 'pitch', team), {passive:false});
+    container.appendChild(div);
+  });
+}
+
+function shortName(name) {
+  if (!name) return '';
+  if (name.length <= 6) return name;
+  const parts = name.split(/[\s・]/);
+  if (parts.length >= 2) return parts[parts.length-1];
+  return name.slice(0, 6);
+}
+
+function removePlayer(slotIdx, team, e) {
+  e.stopPropagation();
+  if (team === 'away') delete opponentLineup[slotIdx]; else delete lineup[slotIdx];
+  renderPitch();
+  renderLineupList();
+  renderPlayerList();
+}
+
+function updateLineupCount() {
+  const isAway = activeTeam === 'away';
+  const tLineup = isAway ? opponentLineup : lineup;
+  const tBench = isAway ? opponentBench : bench;
+  const tFormation = isAway ? opponentFormation : currentFormation;
+  const starters = Object.keys(tLineup).length;
+  const benchers = tBench.filter(Boolean).length;
+  const total = FORMATIONS[tFormation].positions.length;
+  document.getElementById('lineupCount').textContent = `スターター ${starters}/${total}人　ベンチ ${benchers}/5人`;
+}
+
+// ============================================================
+// LINEUP LIST (right panel)
+// ============================================================
+function renderLineupList() {
+  const list = document.getElementById('lineupList');
+  list.innerHTML = '';
+  const isAway = activeTeam === 'away';
+  const tLineup = isAway ? opponentLineup : lineup;
+  const tFormation = isAway ? opponentFormation : currentFormation;
+  const tBench = isAway ? opponentBench : bench;
+  const team = activeTeam;
+
+  const positions = FORMATIONS[tFormation].positions;
+  positions.forEach((pos, idx) => {
+    const player = tLineup[idx];
+    const div = document.createElement('div');
+    div.className = 'lineup-slot' + (player ? ' filled' : '');
+    div.onclick = () => openSlotModal(idx, team);
+    div.title = player ? 'クリックで変更' : 'クリックで選択';
+
+    const initials = player ? getInitials(player.name) : '+';
+    const iconEl = document.createElement('div');
+    iconEl.className = 'ls-icon';
+    if (player && player.img) {
+      const img = document.createElement('img');
+      img.src = player.img;
+      img.loading = 'lazy';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      img.onerror = function() { this.outerHTML = '<span>' + initials + '</span>'; };
+      iconEl.appendChild(img);
+    } else {
+      iconEl.textContent = initials;
+    }
+
+    const numEl = document.createElement('span');
+    numEl.className = 'ls-num';
+    numEl.textContent = idx + 1;
+
+    const infoEl = document.createElement('div');
+    infoEl.className = 'ls-info';
+    infoEl.innerHTML = '<div class="ls-name">' + (player ? player.name : '— 未選択 —') + '</div>'
+      + '<div class="ls-pos">' + pos.role + (player ? ' · ' + player.pos : '') + '</div>';
+
+    div.appendChild(numEl);
+    div.appendChild(iconEl);
+    div.appendChild(infoEl);
+
+    if (player) {
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'ls-clear';
+      clearBtn.textContent = '✕';
+      clearBtn.title = '外す';
+      clearBtn.onclick = function(e) {
+        e.stopPropagation();
+        if (isAway) delete opponentLineup[idx]; else delete lineup[idx];
+        renderPitch(); renderLineupList(); updateLineupCount();
+      };
+      div.appendChild(clearBtn);
+      div.draggable = true;
+      div.addEventListener('dragstart', e => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', JSON.stringify({src:'lineup',slot:idx,team}));
+        dragState.active = true;
+        setTimeout(() => div.classList.add('dragging'), 0);
+      });
+      div.addEventListener('dragend', e => {
+        dragState.active = false;
+        document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+      });
+    }
+    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', e => div.classList.remove('drag-over'));
+    div.addEventListener('drop', e => {
+      e.preventDefault(); div.classList.remove('drag-over');
+      try {
+        const d = JSON.parse(e.dataTransfer.getData('text/plain'));
+        if ((d.src==='pitch'||d.src==='lineup') && d.team===team && d.slot !== idx) {
+          const tL = isAway ? opponentLineup : lineup;
+          const tmp=tL[d.slot]; tL[d.slot]=tL[idx]; tL[idx]=tmp;
+          renderPitch(); renderLineupList(); updateLineupCount();
+        }
+      } catch(ex) {}
+      dragState.active = false;
+    });
+    div.addEventListener('touchstart', e => onTouchStart(e, idx, 'lineup', team), {passive:false});
+    list.appendChild(div);
+  });
+
+  // ── BENCH SECTION ──
+  const benchLabel = document.createElement('div');
+  benchLabel.className = 'lineup-section-label bench-label';
+  benchLabel.textContent = 'BENCH';
+  list.appendChild(benchLabel);
+
+  tBench.forEach((player, bi) => {
+    const div = document.createElement('div');
+    div.className = 'lineup-slot bench-slot' + (player ? ' filled' : '');
+    div.dataset.bench = '1';
+    div.dataset.benchIdx = bi;
+    div.onclick = () => openBenchModal(bi, team);
+    div.title = player ? 'クリックで変更' : 'クリックで追加';
+
+    const initials = player ? getInitials(player.name) : 'B';
+    const numEl = document.createElement('span');
+    numEl.className = 'ls-num bench-num';
+    numEl.textContent = 'B' + (bi + 1);
+
+    const iconEl = document.createElement('div');
+    iconEl.className = 'ls-icon';
+    if (player && player.img) {
+      const img = document.createElement('img');
+      img.src = player.img;
+      img.loading = 'lazy';
+      img.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+      img.onerror = function() { this.outerHTML = '<span>' + initials + '</span>'; };
+      iconEl.appendChild(img);
+    } else {
+      iconEl.textContent = initials;
+    }
+
+    const infoEl = document.createElement('div');
+    infoEl.className = 'ls-info';
+    infoEl.innerHTML = '<div class="ls-name">' + (player ? player.name : '— 未選択 —') + '</div>'
+      + '<div class="ls-pos">' + (player ? player.pos + ' · ベンチ' : 'ベンチ') + '</div>';
+
+    div.appendChild(numEl);
+    div.appendChild(iconEl);
+    div.appendChild(infoEl);
+
+    if (player) {
+      const swapBtn = document.createElement('button');
+      swapBtn.className = 'ls-swap';
+      swapBtn.textContent = '⇄';
+      swapBtn.title = 'スターターと交代';
+      swapBtn.onclick = function(e) { e.stopPropagation(); openSwapModal(bi, team); };
+      div.appendChild(swapBtn);
+
+      const clearBtn = document.createElement('button');
+      clearBtn.className = 'ls-clear';
+      clearBtn.textContent = '✕';
+      clearBtn.onclick = function(e) {
+        e.stopPropagation();
+        if (isAway) opponentBench[bi] = null; else bench[bi] = null;
+        renderLineupList(); updateLineupCount();
+      };
+      div.appendChild(clearBtn);
+
+      // D&D: ベンチ→ピッチへドラッグ可能
+      div.draggable = true;
+      div.addEventListener('dragstart', e => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', JSON.stringify({src:'bench', benchIdx:bi, team}));
+        dragState.active = true;
+        setTimeout(() => div.classList.add('dragging'), 0);
+      });
+      div.addEventListener('dragend', e => {
+        dragState.active = false;
+        document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+      });
+    }
+    // ベンチスロットのdrop対応（選手リストからベンチへ）
+    div.addEventListener('dragover', e => { e.preventDefault(); div.classList.add('drag-over'); });
+    div.addEventListener('dragleave', e => div.classList.remove('drag-over'));
+    div.addEventListener('drop', e => {
+      e.preventDefault(); div.classList.remove('drag-over');
+      try {
+        const d = JSON.parse(e.dataTransfer.getData('text/plain'));
+        const tB = isAway ? opponentBench : bench;
+        const tL = isAway ? opponentLineup : lineup;
+        if (d.src === 'playerList' && d.player) {
+          const inBench = tB.filter(Boolean).map(p=>p.name);
+          const inLineup = Object.values(tL).filter(Boolean).map(p=>p.name);
+          if (!inBench.includes(d.player.name) && !inLineup.includes(d.player.name)) {
+            tB[bi] = d.player;
+            renderLineupList(); renderPlayerList(); updateLineupCount();
+          }
+        }
+      } catch(ex) {}
+    });
+    div.addEventListener('touchstart', e => onTouchStart(e, bi, 'bench', team), {passive:false});
+    list.appendChild(div);
+  });
+}
+
+// ============================================================
+// MODAL: SLOT PICKER
+// ============================================================
+function openSlotModal(slotIdx, team) {
+  activeModalMode = 'slot';
+  activeSlotIdx = slotIdx;
+  activeModalTeam = team || activeTeam;
+  const tFormation = activeModalTeam === 'away' ? opponentFormation : currentFormation;
+  const pos = FORMATIONS[tFormation].positions[slotIdx];
+  document.getElementById('modalTitle').textContent = `${pos.role} に配置`;
+  openPickerModal();
+}
+
+function openPickerModal() {
+  // Populate league select
+  const ls = document.getElementById('pickerLeagueSelect');
+  ls.innerHTML = '<option value="">-- リーグを選ぶ --</option>';
+  Object.keys(LEAGUES).forEach(league => {
+    const o = document.createElement('option');
+    o.value = league; o.textContent = league;
+    ls.appendChild(o);
+  });
+
+  // Restore last selected league/team
+  if (lastPickerLeague) {
+    ls.value = lastPickerLeague;
+    // Repopulate team dropdown for this league
+    const ts = document.getElementById('pickerTeamSelect');
+    ts.innerHTML = '<option value="">-- チームを選ぶ --</option>';
+    const teams = LEAGUES[lastPickerLeague] || {};
+    Object.keys(teams).forEach(team => {
+      const o = document.createElement('option');
+      o.value = team;
+      const info = teams[team];
+      o.dataset.id = info.id;
+      o.dataset.league = info.league;
+      if (info.animeId) o.dataset.animeId = info.animeId;
+      o.textContent = team + (loadedTeamPlayers[team] ? ' ✓' : '');
+      ts.appendChild(o);
+    });
+    ts.style.display = '';
+
+    if (lastPickerTeam && loadedTeamPlayers[lastPickerTeam]) {
+      ts.value = lastPickerTeam;
+      pickerTeamPlayers = loadedTeamPlayers[lastPickerTeam];
+      document.getElementById('pickerLoadStatus').textContent = `✅ ${pickerTeamPlayers.length}人`;
+    } else {
+      ts.value = '';
+      pickerTeamPlayers = [];
+      document.getElementById('pickerLoadStatus').textContent = '';
+    }
+  } else {
+    document.getElementById('pickerTeamSelect').style.display = 'none';
+    document.getElementById('pickerTeamSelect').innerHTML = '<option value="">-- チームを選ぶ --</option>';
+    document.getElementById('pickerLoadStatus').textContent = '';
+    pickerTeamPlayers = [];
+  }
+
+  document.getElementById('modalSearch').value = '';
+  refreshPickerList();
+  document.getElementById('slotModal').classList.add('open');
+}
+
+
+function openBenchModal(benchIdx, team) {
+  activeModalMode = 'bench';
+  activeBenchIdx = benchIdx;
+  activeModalTeam = team || activeTeam;
+  document.getElementById('modalTitle').textContent = `ベンチ ${benchIdx + 1} の選手`;
+  openPickerModal();
+}
+
+
+function openSwapModal(benchIdx, team) {
+  activeModalTeam = team || activeTeam;
+  const isAway = activeModalTeam === 'away';
+  const tBench = isAway ? opponentBench : bench;
+  const tLineup = isAway ? opponentLineup : lineup;
+  const tFormation = isAway ? opponentFormation : currentFormation;
+  const benchPlayer = tBench[benchIdx];
+  if (!benchPlayer) return;
+  const positions = FORMATIONS[tFormation].positions;
+  activeModalMode = 'swap';
+  activeBenchIdx = benchIdx;
+  document.getElementById('modalTitle').textContent = `${benchPlayer.name} を交代させる`;
+  document.getElementById('modalSearch').value = '';
+  allModalPlayers = positions.map((pos, si) => {
+    const p = tLineup[si];
+    return {
+      name: p ? p.name : `(空き) ${pos.role}`,
+      pos: pos.role,
+      num: p ? p.num : null,
+      img: p ? p.img : null,
+      _isSwap: true, _si: si, _stPlayer: p || null
+    };
+  });
+  renderModal(allModalPlayers);
+  document.getElementById('slotModal').classList.add('open');
+}
+function openSlotPicker(player) {
+  // From player list: find empty slots
+  const isAway = activeTeam === 'away';
+  const tLineup = isAway ? opponentLineup : lineup;
+  const tFormation = isAway ? opponentFormation : currentFormation;
+  activeModalTeam = activeTeam;
+  const positions = FORMATIONS[tFormation].positions;
+  const emptySlots = positions.map((p,i) => i).filter(i => !tLineup[i]);
+  if (emptySlots.length === 0) { showToast('空きスロットがありません'); return; }
+  if (emptySlots.length === 1) {
+    tLineup[emptySlots[0]] = player;
+    renderPitch(); renderLineupList(); renderPlayerList(); return;
+  }
+  // Show slot picker modal
+  activeSlotIdx = null;
+  document.getElementById('modalTitle').textContent = `${player.name} を配置するポジション`;
+  document.getElementById('modalSearch').value = '';
+  const slotItems = emptySlots.map(si => ({
+    name: `${positions[si].role} (スロット${si+1})`,
+    pos: positions[si].role,
+    _isSlot: true,
+    _slotIdx: si,
+    _player: player
+  }));
+  allModalPlayers = slotItems;
+  renderModal(slotItems);
+  document.getElementById('slotModal').classList.add('open');
+}
+
+function filterModal() {
+  refreshPickerList();
+}
+
+
+// ============================================================
+// PICKER MODAL: team/league filter + cross-team search
+// ============================================================
+
+// State for which team is loaded in picker
+let pickerTeamPlayers = []; // players of currently selected picker team
+let lastPickerLeague = '';   // remembered across modal opens
+let lastPickerTeam = '';     // remembered across modal opens
+
+function onPickerLeagueChange() {
+  const league = document.getElementById('pickerLeagueSelect').value;
+  const ts = document.getElementById('pickerTeamSelect');
+  lastPickerLeague = league;
+  lastPickerTeam = '';
+  if (!league) {
+    ts.style.display = 'none';
+    ts.innerHTML = '<option value="">-- チームを選ぶ --</option>';
+    pickerTeamPlayers = [];
+    refreshPickerList();
+    return;
+  }
+  ts.innerHTML = '<option value="">-- チームを選ぶ --</option>';
+  const teams = LEAGUES[league] || {};
+  Object.keys(teams).forEach(team => {
+    const o = document.createElement('option');
+    o.value = team;
+    const info = teams[team];
+    o.dataset.id = info.id;
+    o.dataset.league = info.league;
+    if (info.animeId) o.dataset.animeId = info.animeId;
+    o.textContent = team + (loadedTeamPlayers[team] ? ' ✓' : '');
+    ts.appendChild(o);
+  });
+  ts.style.display = '';
+  pickerTeamPlayers = [];
+  refreshPickerList();
+}
+
+async function onPickerTeamChange() {
+  const ts = document.getElementById('pickerTeamSelect');
+  const selected = ts.options[ts.selectedIndex];
+  const teamName = selected.value;
+  lastPickerTeam = teamName;
+  if (!teamName) { pickerTeamPlayers = []; refreshPickerList(); return; }
+
+  const teamId = selected.dataset.id;
+  const teamLeague = selected.dataset.league;
+  const animeId = selected.dataset.animeId ? parseInt(selected.dataset.animeId) : null;
+  const status = document.getElementById('pickerLoadStatus');
+
+  // Use cache if available
+  if (loadedTeamPlayers[teamName]) {
+    pickerTeamPlayers = loadedTeamPlayers[teamName];
+    refreshPickerList();
+    return;
+  }
+
+  status.textContent = '⏳ 取得中...';
+  try {
+    let players = [];
+    if (teamLeague === 'preset') {
+      players = loadPresetPlayers(teamName);
+    } else if (teamLeague === 'jpn.1') {
+      players = await fetchWikiSquad(teamName);
+      if (players.length < 3 && TEAM_PRESETS[teamName]) players = loadPresetPlayers(teamName);
+    } else {
+      players = await fetchESPNSquad(teamName, teamId, teamLeague);
+    }
+    loadedTeamPlayers[teamName] = players;
+    rebuildAllPlayers();
+    pickerTeamPlayers = players;
+    status.textContent = `✅ ${players.length}人`;
+    refreshPickerList();
+    // Also enrich with wiki photos in background
+    if (teamLeague !== 'anime') {
+      enrichWithWikiPhotos(players).then(() => {
+        syncPhotosToLineupAndBench(players);
+        refreshPickerList();
+      });
+    }
+  } catch(e) {
+    status.textContent = '⚠️ 取得失敗';
+    pickerTeamPlayers = [];
+    refreshPickerList();
+  }
+}
+
+function refreshPickerList() {
+  const searchVal = document.getElementById('modalSearch').value.toLowerCase().trim();
+  const pickerTeam = document.getElementById('pickerTeamSelect').value;
+  const pickerLeague = document.getElementById('pickerLeagueSelect').value;
+
+  let pool = [];
+
+  if (pickerTeam && pickerTeamPlayers.length) {
+    // Team selected: show that team's players
+    pool = pickerTeamPlayers;
+  } else if (searchVal && allPlayers.length) {
+    // Name search across all loaded players (when no team selected)
+    pool = allPlayers;
+  } else {
+    // Nothing selected, nothing to show
+    allModalPlayers = [];
+    renderModal([]);
+    return;
+  }
+
+  // Filter by search (name, position, number)
+  if (searchVal) {
+    pool = pool.filter(p => {
+      if (!p.name) return false;
+      if (p.name.toLowerCase().includes(searchVal)) return true;
+      if (p.pos && p.pos.toLowerCase().includes(searchVal)) return true;
+      if (p.num && String(p.num).includes(searchVal)) return true;
+      return false;
+    });
+  }
+
+  // Exclude already placed players (check active team's lineup/bench)
+  const tL = activeModalTeam === 'away' ? opponentLineup : lineup;
+  const tB = activeModalTeam === 'away' ? opponentBench : bench;
+  const inLineup = new Set(Object.values(tL).filter(Boolean).map(p => p.name));
+  const inBench = new Set(tB.filter(Boolean).map(p => p.name));
+  pool = pool.filter(p => !inLineup.has(p.name) && !inBench.has(p.name));
+
+  allModalPlayers = pool;
+  renderModal(pool);
+}
+
+function renderModal(players) {
+  const ml = document.getElementById('modalPlayerList');
+  ml.innerHTML = '';
+  players.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'player-item';
+    if (p._isSlot) {
+      div.innerHTML = `<div class="p-info"><div class="p-name">${p.name}</div></div>`;
+      div.onclick = () => {
+        lineup[p._slotIdx] = p._player;
+        closeModal(); renderPitch(); renderLineupList(); renderPlayerList();
+      };
+    } else {
+      // Find team name for badge
+      let teamBadge = '';
+      for (const [tname, tplayers] of Object.entries(loadedTeamPlayers)) {
+        if (tplayers.some(tp => tp.name === p.name)) {
+          teamBadge = `<span class="picker-team-badge">${tname}</span>`;
+          break;
+        }
+      }
+      div.innerHTML = `
+        <div class="p-avatar">${renderAvatar(p)}</div>
+        <div class="p-info">
+          <div class="p-name">${p.name}${teamBadge}</div>
+          <div class="p-meta">${p.pos||''}${p.num?' #'+p.num:''}</div>
+        </div>
+      `;
+      div.onclick = () => {
+        const isAway = activeModalTeam === 'away';
+        const tLineup = isAway ? opponentLineup : lineup;
+        const tBench = isAway ? opponentBench : bench;
+        if (activeModalMode === 'swap' && p._isSwap) {
+          const benchP = tBench[activeBenchIdx];
+          tBench[activeBenchIdx] = p._stPlayer || null;
+          tLineup[p._si] = benchP;
+          closeModal(); renderPitch(); renderLineupList(); updateLineupCount();
+        } else if (activeModalMode === 'bench') {
+          tBench[activeBenchIdx] = p;
+          closeModal(); renderLineupList(); updateLineupCount();
+        } else {
+          tLineup[activeSlotIdx] = p;
+          closeModal(); renderPitch(); renderLineupList(); renderPlayerList(); updateLineupCount();
+        }
+      };
+    }
+    ml.appendChild(div);
+  });
+  if (!players.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--text-dim);padding:16px;font-size:0.78rem;text-align:center;';
+    const hasTeam = document.getElementById('pickerTeamSelect').value;
+    const hasSearch = document.getElementById('modalSearch').value.trim();
+    if (!hasTeam && !hasSearch) {
+      empty.innerHTML = '⬆️ リーグ→チームを選ぶか、名前・背番号・ポジションで検索してください';
+    } else {
+      empty.textContent = '候補がいません';
+    }
+    ml.appendChild(empty);
+  }
+}
+
+function closeModal() {
+  document.getElementById('slotModal').classList.remove('open');
+  // Don't clear pickerTeamPlayers - remember for next open
+}
+
+
+// ============================================================
+// CUSTOM PLAYER: SEARCH
+// ============================================================
+function switchCustomTab(tab) {
+  document.querySelectorAll('.custom-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.custom-tab-content').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'manage') renderCustomManageList();
+}
+
+async function searchPlayerImage() {
+  const name = document.getElementById('customName').value.trim();
+  if (!name) return;
+
+  const btn = document.getElementById('searchBtn');
+  const note = document.getElementById('searchNote');
+  const results = document.getElementById('searchResults');
+  results.innerHTML = '';
+  note.innerHTML = '<span class="spinner"></span> 検索中...';
+  document.getElementById('customPreviewRow').style.display = 'none';
+  btn.disabled = true;
+
+  // Collect candidate images from multiple sources in parallel
+  const candidateUrls = new Set(); // deduplicate
+  const foundImages = [];
+
+  function addImage(src, label) {
+    if (!src || candidateUrls.has(src)) return;
+    candidateUrls.add(src);
+    foundImages.push({src, label});
+  }
+
+  // Run all searches in parallel
+  await Promise.allSettled([
+
+    // --- 1. Wikipedia JP (main image) ---
+    (async () => {
+      const data = await fetch(
+        `https://ja.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&prop=pageimages|images&format=json&pithumbsize=400&pilimit=5&origin=*`
+      ).then(r => r.json());
+      const page = Object.values(data.query.pages)[0];
+      if (page?.thumbnail?.source) addImage(page.thumbnail.source, 'Wikipedia JP');
+      // Also get all page images (good for anime chars)
+      if (page?.images) {
+        const imgNames = page.images.map(i => i.title).filter(t =>
+          /\.(jpg|jpeg|png|webp)$/i.test(t) && !/logo|icon|flag|stub|question/i.test(t)
+        ).slice(0, 3);
+        for (const title of imgNames) {
+          const imgData = await fetch(
+            `https://ja.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url&format=json&origin=*`
+          ).then(r => r.json()).catch(() => null);
+          if (imgData) {
+            const p = Object.values(imgData.query.pages)[0];
+            const url = p?.imageinfo?.[0]?.url;
+            if (url && /\.(jpg|jpeg|png|webp)$/i.test(url)) addImage(url, 'Wikipedia JP');
+          }
+        }
+      }
+    })(),
+
+    // --- 2. Wikipedia EN ---
+    (async () => {
+      const data = await fetch(
+        `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(name)}&prop=pageimages|images&format=json&pithumbsize=400&pilimit=5&origin=*`
+      ).then(r => r.json());
+      const page = Object.values(data.query.pages)[0];
+      if (page?.thumbnail?.source) addImage(page.thumbnail.source, 'Wikipedia EN');
+    })(),
+
+    // --- 3. Wikidata: P18 (image), P154 (logo), P18 for fictional chars ---
+    (async () => {
+      // Search both JP and EN to find entity
+      const [jaSearch, enSearch] = await Promise.all([
+        fetch(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=ja&format=json&origin=*&limit=3`).then(r=>r.json()),
+        fetch(`https://www.wikidata.org/w/api.php?action=wbsearchentities&search=${encodeURIComponent(name)}&language=en&format=json&origin=*&limit=3`).then(r=>r.json())
+      ]);
+      const entities = [...(jaSearch.search||[]), ...(enSearch.search||[])];
+      const seen = new Set();
+      for (const ent of entities) {
+        if (seen.has(ent.id)) continue;
+        seen.add(ent.id);
+        const entity = await fetch(`https://www.wikidata.org/wiki/Special:EntityData/${ent.id}.json`).then(r=>r.json()).catch(()=>null);
+        if (!entity) continue;
+        const claims = entity.entities?.[ent.id]?.claims || {};
+        // P18 = image, P154 = logo image, P6802 = related image
+        for (const prop of ['P18','P154','P6802']) {
+          const vals = claims[prop] || [];
+          for (const v of vals.slice(0,2)) {
+            const fname = v.mainsnak?.datavalue?.value;
+            if (fname) {
+              const url = await wikimediaFileUrl(fname);
+              if (url) addImage(url, `Wikidata(${prop})`);
+            }
+          }
+        }
+      }
+    })(),
+
+    // --- 4. Wikimedia Commons: search by name (great for anime/manga/game chars) ---
+    (async () => {
+      const data = await fetch(
+        `https://commons.wikimedia.org/w/api.php?action=query&list=search&srnamespace=6&srsearch=${encodeURIComponent(name)}&format=json&origin=*&srlimit=8`
+      ).then(r => r.json());
+      const hits = (data.query?.search || []).filter(h =>
+        /\.(jpg|jpeg|png|webp|svg)$/i.test(h.title) && !/stub|logo|flag|map|icon/i.test(h.title)
+      ).slice(0, 5);
+      for (const hit of hits) {
+        const imgData = await fetch(
+          `https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(hit.title)}&prop=imageinfo&iiprop=url&iiurlwidth=300&format=json&origin=*`
+        ).then(r => r.json()).catch(() => null);
+        if (imgData) {
+          const p = Object.values(imgData.query?.pages || {})[0];
+          const url = p?.imageinfo?.[0]?.thumburl || p?.imageinfo?.[0]?.url;
+          if (url) addImage(url, 'Wikimedia Commons');
+        }
+      }
+    })(),
+
+    // --- 5. DuckDuckGo Instant Answer API (Instant Answers / info box images) ---
+    (async () => {
+      // DDG IA returns an "Image" field for known entities
+      const data = await fetch(
+        `https://api.duckduckgo.com/?q=${encodeURIComponent(name)}&format=json&no_html=1&skip_disambig=1`
+      ).then(r => r.json()).catch(() => null);
+      if (data?.Image && data.Image.startsWith('http')) addImage(data.Image, 'DuckDuckGo');
+      // RelatedTopics may also have images
+      for (const topic of (data?.RelatedTopics || []).slice(0,5)) {
+        if (topic.Icon?.URL && topic.Icon.URL.startsWith('http')) addImage(topic.Icon.URL, 'DDG Related');
+      }
+    })(),
+
+    // --- 6. Open Anime/Game DB: Jikan (MyAnimeList API) for anime chars ---
+    (async () => {
+      const data = await fetch(
+        `https://api.jikan.moe/v4/characters?q=${encodeURIComponent(name)}&limit=5`
+      ).then(r => r.json()).catch(() => null);
+      for (const char of (data?.data || [])) {
+        if (char.images?.jpg?.image_url) addImage(char.images.jpg.image_url, 'MyAnimeList');
+        if (char.images?.jpg?.small_image_url) addImage(char.images.jpg.small_image_url, 'MyAnimeList');
+      }
+    })(),
+
+    // --- 7. RAWG (game characters/persons) ---
+    // Skip - requires API key
+
+    // --- 8. Avatar via unavatar.io (Twitter/GitHub/Gravatar aggregator) ---
+    (async () => {
+      // Works best for public figures with Twitter accounts
+      // Use as low-confidence last resort — add as single candidate
+      const twitterGuess = name.toLowerCase().replace(/\s+/g,'').replace(/[^\w]/g,'');
+      if (twitterGuess.length >= 3) {
+        addImage(`https://unavatar.io/twitter/${twitterGuess}?fallback=false`, 'Twitter(推測)');
+      }
+    })(),
+
+  ]);
+
+  btn.disabled = false;
+
+  // Display found images - show immediately, remove on error
+  if (foundImages.length > 0) {
+    note.textContent = `候補を読み込み中... (最大${foundImages.length}件)`;
+    let loadedCount = 0;
+    let errorCount = 0;
+
+    foundImages.forEach(({src, label}) => {
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'position:relative;display:inline-block;';
+
+      const img = document.createElement('img');
+      img.className = 'img-cand';
+      img.src = src;
+      img.title = label;
+      img.loading = 'lazy';
+
+      img.onload = () => {
+        loadedCount++;
+        note.textContent = `${loadedCount}件の画像が見つかりました。選択してください。`;
+      };
+      img.onerror = () => {
+        errorCount++;
+        wrapper.remove();
+        if (loadedCount === 0 && (loadedCount + errorCount) >= foundImages.length) {
+          note.textContent = '画像が見つかりませんでした。テキストアバターで追加できます。';
+          pendingSearch = {name, imgSrc: null};
+          showSearchPreview(null, name);
+        }
+      };
+      img.onclick = () => {
+        document.querySelectorAll('.img-cand').forEach(i => i.classList.remove('picked'));
+        img.classList.add('picked');
+        pendingSearch = {name, imgSrc: src};
+        showSearchPreview(src, name);
+      };
+
+      // Label badge
+      const badge = document.createElement('div');
+      badge.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);font-size:9px;color:#aaa;text-align:center;padding:1px;';
+      badge.textContent = label;
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(badge);
+      results.appendChild(wrapper);
+    });
+  } else {
+    note.textContent = '画像が見つかりませんでした。テキストアバターで追加できます。';
+    pendingSearch = {name, imgSrc: null};
+    showSearchPreview(null, name);
+  }
+}
+
+// Helper: get direct URL for a Wikimedia file by filename
+async function wikimediaFileUrl(filename) {
+  try {
+    const encoded = filename.replace(/ /g, '_');
+    const data = await fetch(
+      `https://commons.wikimedia.org/w/api.php?action=query&titles=File:${encodeURIComponent(encoded)}&prop=imageinfo&iiprop=url&iiurlwidth=300&format=json&origin=*`
+    ).then(r => r.json());
+    const page = Object.values(data.query?.pages || {})[0];
+    return page?.imageinfo?.[0]?.thumburl || page?.imageinfo?.[0]?.url || null;
+  } catch(e) { return null; }
+}
+
+function showSearchPreview(imgSrc, name) {
+  const row = document.getElementById('customPreviewRow');
+  const avatar = document.getElementById('customPreviewAvatar');
+  row.style.display = 'block';
+  document.getElementById('customNameConfirm').value = name;
+  if (imgSrc) {
+    avatar.innerHTML = `<img src="${imgSrc}" onerror="this.parentNode.innerHTML='👤'">`;
+  } else {
+    avatar.innerHTML = getInitials(name);
+  }
+}
+
+function addCustomPlayer() {
+  const name = document.getElementById('customNameConfirm').value.trim() || (pendingSearch?.name||'');
+  if (!name) { showToast('名前を入力してください'); return; }
+  const pos = document.getElementById('customPos').value.trim() || 'MF';
+  const num = parseInt(document.getElementById('customNum').value) || 0;
+  const imgSrc = pendingSearch?.imgSrc || null;
+
+  const player = {name, pos, num, img: imgSrc, custom: true, id: Date.now()};
+  customPlayers.push(player);
+  saveCustomPlayers();
+  rebuildAllPlayers();
+  renderPlayerList();
+  showToast(`${name} を追加しました`);
+  resetSearchUI();
+}
+
+function resetSearchUI() {
+  document.getElementById('customName').value = '';
+  document.getElementById('customNameConfirm').value = '';
+  document.getElementById('customPos').value = '';
+  document.getElementById('customNum').value = '';
+  document.getElementById('searchResults').innerHTML = '';
+  document.getElementById('searchNote').textContent = '';
+  document.getElementById('customPreviewRow').style.display = 'none';
+  pendingSearch = null;
+}
+
+// ============================================================
+// CUSTOM PLAYER: UPLOAD
+// ============================================================
+function handleUpload() {
+  const file = document.getElementById('uploadFile').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    uploadImgDataUrl = e.target.result;
+    const preview = document.getElementById('uploadPreview');
+    preview.innerHTML = `<img src="${uploadImgDataUrl}" style="width:100%;height:100%;object-fit:cover;">`;
+  };
+  reader.readAsDataURL(file);
+}
+
+function addUploadPlayer() {
+  const name = document.getElementById('uploadName').value.trim();
+  if (!name) { showToast('名前を入力してください'); return; }
+  const pos = document.getElementById('uploadPos').value.trim() || 'MF';
+  const num = parseInt(document.getElementById('uploadNum').value) || 0;
+
+  const player = {name, pos, num, img: uploadImgDataUrl, custom: true, id: Date.now()};
+  customPlayers.push(player);
+  saveCustomPlayers();
+  rebuildAllPlayers();
+  renderPlayerList();
+  showToast(`${name} を追加しました`);
+
+  document.getElementById('uploadName').value = '';
+  document.getElementById('uploadPos').value = '';
+  document.getElementById('uploadNum').value = '';
+  document.getElementById('uploadPreview').innerHTML = '👤';
+  uploadImgDataUrl = null;
+}
+
+// ============================================================
+// CUSTOM PLAYER: MANAGE & DELETE
+// ============================================================
+function renderCustomManageList() {
+  const list = document.getElementById('customPlayerManageList');
+  if (!customPlayers.length) {
+    list.innerHTML = '<div style="color:var(--text-dim);font-size:0.75rem;padding:6px;">カスタム選手なし</div>';
+    return;
+  }
+  list.innerHTML = '';
+  customPlayers.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'player-item';
+    div.style.padding = '5px 8px';
+    div.innerHTML = `
+      <div class="p-avatar">${p.img ? `<img src="${p.img}" onerror="this.parentNode.innerHTML='👤'">` : getInitials(p.name)}</div>
+      <div class="p-info">
+        <div class="p-name">${p.name}</div>
+        <div class="p-meta">${p.pos||''} ${p.num?'#'+p.num:''}</div>
+      </div>
+      <button class="btn-xs danger" style="padding:4px 8px;font-size:0.7rem;" onclick="deleteCustomPlayer('${p.name}')">削除</button>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function deleteCustomPlayer(name, e) {
+  if (e) e.stopPropagation();
+  customPlayers = customPlayers.filter(p => p.name !== name);
+  saveCustomPlayers();
+  rebuildAllPlayers();
+  // Remove from lineup if placed
+  Object.keys(lineup).forEach(i => { if (lineup[i].name === name) delete lineup[i]; });
+  renderPitch(); renderLineupList(); renderPlayerList(); renderCustomManageList();
+  showToast(`${name} を削除しました`);
+}
+
+function saveCustomPlayers() {
+  try {
+    // Don't save large base64 images to localStorage (size limit)
+    const toSave = customPlayers.map(p => ({
+      ...p,
+      img: p.img && p.img.startsWith('data:') ? null : p.img
+    }));
+    localStorage.setItem('customPlayers', JSON.stringify(toSave));
+  } catch(e) {}
+}
+
+// ============================================================
+// LINEUP ACTIONS
+// ============================================================
+function clearLineup() {
+  if (!confirm('スタメンとベンチをリセットしますか？')) return;
+  if (activeTeam === 'away') {
+    opponentLineup = {};
+    opponentBench = [null, null, null, null, null];
+  } else {
+    lineup = {};
+    bench = [null, null, null, null, null];
+  }
+  renderPitch();
+  renderLineupList();
+  renderPlayerList();
+  updateLineupCount();
+}
+
+
+function showQR() {
+  const url = window.location.href;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(url)}`;
+  document.getElementById('qrCodeArea').innerHTML = `<img src="${qrUrl}" width="200" height="200" style="border-radius:6px;">`;
+  document.getElementById('qrUrlText').textContent = url;
+  document.getElementById('qrModal').classList.add('open');
+}
+async function exportPNG() {
+  // 対戦相手ONなら pitchArea 全体を、OFFならhomeピッチのみキャプチャ
+  const captureEl = opponentEnabled
+    ? document.getElementById('pitchArea')
+    : document.getElementById('pitchWrap');
+  if (!captureEl) { showToast('ピッチが見つかりません'); return; }
+
+  showToast('📸 画像生成中...');
+
+  try {
+    const canvas = await html2canvas(captureEl, {
+      backgroundColor: opponentEnabled ? '#101410' : '#1a3a14',
+      scale: 2,
+      useCORS: false,
+      allowTaint: false,
+      logging: false,
+      imageTimeout: 0,
+    });
+
+    if (navigator.clipboard && window.ClipboardItem) {
+      canvas.toBlob(async (blob) => {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({'image/png': blob})]);
+          showToast('✅ クリップボードにコピーしました！');
+        } catch(e) {
+          downloadCanvas(canvas);
+        }
+      }, 'image/png');
+    } else {
+      downloadCanvas(canvas);
+    }
+  } catch(e) {
+    console.warn('html2canvas failed:', e);
+    showToast('⚠️ 画像生成に失敗しました');
+  }
+}
+
+function downloadCanvas(canvas) {
+  const link = document.createElement('a');
+  link.download = 'lineup_' + new Date().toISOString().slice(0,10) + '.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showToast('✅ 画像を保存しました！');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+document.getElementById('slotModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+document.getElementById('customName').addEventListener('keydown', e => {
+  if (e.key === 'Enter') searchPlayerImage();
+});
+
+// ============================================================
+// START
+// ============================================================
+init();
+
+// ============================================================
+// LINEUP SAVE / LOAD  (localStorage, max 10 slots)
+// ============================================================
+const LS_KEY = 'lineup_saves';
+
+function getSaves() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch(e) { return []; }
+}
+function putSaves(arr) {
+  localStorage.setItem(LS_KEY, JSON.stringify(arr));
+}
+
+function openSaveModal() {
+  const saves = getSaves();
+  const list = document.getElementById('saveSlotList');
+  list.innerHTML = '';
+  // Show existing saves
+  if (saves.length) {
+    const label = document.createElement('div');
+    label.style.cssText = 'font-size:0.65rem;color:var(--text-dim);margin-bottom:6px;letter-spacing:1px;';
+    label.textContent = '既存の保存データ（上書き可）';
+    list.appendChild(label);
+    saves.forEach((s, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--panel-border);border-radius:4px;margin-bottom:4px;cursor:pointer;font-size:0.78rem;';
+      row.innerHTML = `<span style="flex:1;">${s.name}</span><span style="font-size:0.65rem;color:var(--text-dim);">${s.formation} · ${new Date(s.ts).toLocaleDateString('ja')}</span>`;
+      row.onclick = () => { document.getElementById('saveNameInput').value = s.name; };
+      list.appendChild(row);
+    });
+  }
+  document.getElementById('saveNameInput').value = '';
+  document.getElementById('saveModal').classList.add('open');
+  setTimeout(() => document.getElementById('saveNameInput').focus(), 100);
+}
+
+function doSaveLineup() {
+  const name = document.getElementById('saveNameInput').value.trim() || '名称未設定';
+  const saves = getSaves();
+  const existing = saves.findIndex(s => s.name === name);
+  const data = {
+    name, ts: Date.now(),
+    formation: currentFormation,
+    lineup: lineup,
+    bench: bench,
+    teamColor: currentTeamColor
+  };
+  if (existing >= 0) saves[existing] = data;
+  else saves.push(data);
+  if (saves.length > 10) saves.shift(); // cap at 10
+  putSaves(saves);
+  document.getElementById('saveModal').classList.remove('open');
+  showToast(`✅ 「${name}」を保存しました`);
+}
+
+function openLoadModal() {
+  const saves = getSaves();
+  const list = document.getElementById('loadSlotList');
+  list.innerHTML = '';
+  if (!saves.length) {
+    list.innerHTML = '<div style="color:var(--text-dim);padding:16px;text-align:center;font-size:0.78rem;">保存データがありません</div>';
+  } else {
+    saves.slice().reverse().forEach((s, i) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--panel-border);border-radius:5px;margin-bottom:5px;cursor:pointer;transition:border-color .15s;';
+      row.onmouseover = () => row.style.borderColor = 'rgba(200,245,96,.4)';
+      row.onmouseout = () => row.style.borderColor = 'var(--panel-border)';
+      const starters = Object.keys(s.lineup || {}).length;
+      row.innerHTML = `
+        <div style="flex:1;">
+          <div style="font-size:0.82rem;font-weight:700;">${s.name}</div>
+          <div style="font-size:0.65rem;color:var(--text-dim);">${s.formation} · スターター${starters}人 · ${new Date(s.ts).toLocaleDateString('ja')}</div>
+        </div>
+        <button class="btn-xs" onclick="doLoadLineup(${saves.length-1-i});event.stopPropagation();" style="padding:4px 8px;font-size:0.68rem;">読み込む</button>
+        <button class="btn-xs danger" onclick="doDeleteSave(${saves.length-1-i});event.stopPropagation();" style="padding:4px 8px;font-size:0.68rem;">削除</button>
+      `;
+      row.onclick = () => doLoadLineup(saves.length-1-i);
+      list.appendChild(row);
+    });
+  }
+  document.getElementById('loadModal').classList.add('open');
+}
+
+function doLoadLineup(idx) {
+  const saves = getSaves();
+  const s = saves[idx];
+  if (!s) return;
+  currentFormation = s.formation;
+  lineup = s.lineup || {};
+  bench = s.bench || [null,null,null,null,null];
+  if (s.teamColor) { currentTeamColor = s.teamColor; applyTeamColor(); }
+  document.querySelectorAll('.formation-btn').forEach(b => b.classList.toggle('active', b.textContent===currentFormation));
+  document.getElementById('loadModal').classList.remove('open');
+  renderPitch(); renderLineupList(); renderPlayerList(); updateLineupCount();
+  showToast(`✅ 「${s.name}」を読み込みました`);
+}
+
+function doDeleteSave(idx) {
+  const saves = getSaves();
+  const name = saves[idx]?.name;
+  saves.splice(idx, 1);
+  putSaves(saves);
+  openLoadModal(); // refresh
+  showToast(`🗑 「${name}」を削除しました`);
+}
+
+// ============================================================
+// TEAM COLOR  (accent color for pitch player circles)
+// ============================================================
+let currentTeamColor = '#c8f560'; // default accent
+
+function applyTeamColor() {
+  document.documentElement.style.setProperty('--accent', currentTeamColor);
+}
+
+// ============================================================
+// PLAYER NAME INLINE EDIT
+// Double-tap/click on player name label on pitch
+// ============================================================
+function editPlayerName(slotIdx, team, e) {
+  e.stopPropagation();
+  const tLineup = team === 'away' ? opponentLineup : lineup;
+  const player = tLineup[slotIdx];
+  if (!player) return;
+  const label = document.querySelector(`.pitch-player[data-slot="${slotIdx}"][data-team="${team}"] .pp-label`);
+  if (!label) return;
+  const current = player.name;
+  const input = document.createElement('input');
+  input.value = current;
+  input.style.cssText = 'width:72px;font-size:0.62rem;padding:2px 4px;background:#111;color:#fff;border:1px solid var(--accent);border-radius:3px;text-align:center;outline:none;';
+  label.innerHTML = '';
+  label.appendChild(input);
+  input.focus(); input.select();
+  const commit = () => {
+    const newName = input.value.trim() || current;
+    player.name = newName;
+    renderPitch(); renderLineupList();
+  };
+  input.onblur = commit;
+  input.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { player.name = current; renderPitch(); renderLineupList(); } };
+}
+
+// ============================================================
+// DRAG STATE + TOUCH DRAG
+// ============================================================
+const dragState = { active: false, slot: null };
+
+let touchDragSrc = null;
+let touchGhost = null;
+let touchStartPos = {x:0, y:0};
+
+function onTouchStart(e, slot, type, team, player) {
+  const touch = e.touches[0];
+  touchStartPos = {x: touch.clientX, y: touch.clientY};
+  touchDragSrc = {type, slot, team: team || 'home', el: e.currentTarget, timer: null, player: player || null};
+
+  touchDragSrc.timer = setTimeout(() => {
+    if (!touchDragSrc) return;
+    dragState.active = true;
+    const srcEl = touchDragSrc.el;
+    touchGhost = srcEl.cloneNode(true);
+    touchGhost.style.cssText = 'position:fixed;pointer-events:none;z-index:9999;opacity:0.85;transform:translate(-50%,-50%) scale(1.1);transition:none;left:'+touch.clientX+'px;top:'+touch.clientY+'px;width:'+srcEl.offsetWidth+'px;';
+    document.body.appendChild(touchGhost);
+    srcEl.style.opacity = '0.35';
+    if (navigator.vibrate) navigator.vibrate(30);
+  }, 280);
+}
+
+document.addEventListener('touchmove', e => {
+  if (!touchDragSrc) return;
+  const touch = e.touches[0];
+  const dx = touch.clientX - touchStartPos.x, dy = touch.clientY - touchStartPos.y;
+  if (!dragState.active && (Math.abs(dx)>8||Math.abs(dy)>8)) {
+    clearTimeout(touchDragSrc.timer); touchDragSrc = null; return;
+  }
+  if (!dragState.active) return;
+  e.preventDefault();
+  if (touchGhost) { touchGhost.style.left=touch.clientX+'px'; touchGhost.style.top=touch.clientY+'px'; }
+  document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  const underEl = document.elementFromPoint(touch.clientX, touch.clientY);
+  const target = underEl?.closest('.pitch-player[data-slot]') || underEl?.closest('.lineup-slot[data-slot]');
+  if (target) target.classList.add('drag-over');
+}, {passive:false});
+
+document.addEventListener('touchend', e => {
+  if (!touchDragSrc) return;
+  clearTimeout(touchDragSrc.timer);
+  if (dragState.active) {
+    const touch = e.changedTouches[0];
+    if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+    if (touchDragSrc.el) touchDragSrc.el.style.opacity = '';
+    document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+    const underEl = document.elementFromPoint(touch.clientX, touch.clientY);
+    const pitchT = underEl?.closest('.pitch-player[data-slot]');
+    const listT  = underEl?.closest('.lineup-slot[data-slot]');
+    const tSlot  = pitchT ? parseInt(pitchT.dataset.slot) : (listT ? parseInt(listT.dataset.slot) : null);
+    const tTeam  = pitchT?.dataset?.team || touchDragSrc.team;
+
+    if (touchDragSrc.type === 'playerList' && touchDragSrc.player) {
+      // 選手リストからピッチへ
+      if (pitchT && tTeam) {
+        const pSlot = parseInt(pitchT.dataset.slot);
+        const tL = tTeam === 'away' ? opponentLineup : lineup;
+        const inLineup = Object.values(tL).filter(Boolean).map(p=>p.name);
+        if (!inLineup.includes(touchDragSrc.player.name)) {
+          tL[pSlot] = touchDragSrc.player;
+          renderPitch(); renderLineupList(); renderPlayerList(); updateLineupCount();
+        }
+      } else if (listT && listT.dataset.bench) {
+        // 選手リストからベンチへ
+        const bi = parseInt(listT.dataset.benchIdx);
+        const team2 = touchDragSrc.team;
+        const tB = team2 === 'away' ? opponentBench : bench;
+        const tL2 = team2 === 'away' ? opponentLineup : lineup;
+        const inBench = tB.filter(Boolean).map(p=>p.name);
+        const inLineup2 = Object.values(tL2).filter(Boolean).map(p=>p.name);
+        if (!isNaN(bi) && !inBench.includes(touchDragSrc.player.name) && !inLineup2.includes(touchDragSrc.player.name)) {
+          tB[bi] = touchDragSrc.player;
+          renderLineupList(); renderPlayerList(); updateLineupCount();
+        }
+      }
+    } else if (touchDragSrc.type === 'bench' && pitchT) {
+      // ベンチからピッチへ
+      const pSlot = parseInt(pitchT.dataset.slot);
+      const team2 = tTeam || touchDragSrc.team;
+      const tL = team2 === 'away' ? opponentLineup : lineup;
+      const tB = team2 === 'away' ? opponentBench : bench;
+      const benchPlayer = tB[touchDragSrc.slot];
+      if (benchPlayer) {
+        const old = tL[pSlot] || null;
+        tL[pSlot] = benchPlayer;
+        tB[touchDragSrc.slot] = old;
+        renderPitch(); renderLineupList(); updateLineupCount();
+      }
+    } else if (tSlot !== null && tSlot !== touchDragSrc.slot && tTeam === touchDragSrc.team) {
+      const tL = touchDragSrc.team === 'away' ? opponentLineup : lineup;
+      const tmp=tL[touchDragSrc.slot]; tL[touchDragSrc.slot]=tL[tSlot]; tL[tSlot]=tmp;
+      renderPitch(); renderLineupList(); updateLineupCount();
+    }
+    dragState.active = false;
+  }
+  touchDragSrc = null;
+});
+
+document.addEventListener('touchcancel', () => {
+  if (touchDragSrc) { clearTimeout(touchDragSrc.timer); if(touchDragSrc.el) touchDragSrc.el.style.opacity=''; }
+  if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+  document.querySelectorAll('.drag-over').forEach(el=>el.classList.remove('drag-over'));
+  dragState.active = false; touchDragSrc = null;
+});
+
+// ============================================================
+// SHARE URL
+// ============================================================
+function getShareURL() {
+  const state = {
+    f: currentFormation,
+    l: Object.fromEntries(Object.entries(lineup).map(([k,v])=>[k,{n:v.name,p:v.pos,num:v.num}])),
+    b: bench.map(p=>p?{n:p.name,p:p.pos,num:p.num}:null),
+    c: currentTeamColor
+  };
+  try { return location.href.split('#')[0]+'#'+btoa(encodeURIComponent(JSON.stringify(state))); } catch(e) { return location.href; }
+}
+
+function loadFromHash() {
+  if (!location.hash) return;
+  try {
+    const state = JSON.parse(decodeURIComponent(atob(location.hash.slice(1))));
+    if (state.f && FORMATIONS[state.f]) {
+      currentFormation = state.f;
+      document.querySelectorAll('.formation-btn').forEach(b=>b.classList.toggle('active',b.textContent===currentFormation));
+    }
+    lineup = {};
+    Object.entries(state.l||{}).forEach(([k,v])=>{ lineup[k]={name:v.n,pos:v.p,num:v.num,img:null}; });
+    bench = (state.b||[null,null,null,null,null]).map(p=>p?{name:p.n,pos:p.p,num:p.num,img:null}:null);
+    if (state.c) { currentTeamColor=state.c; applyTeamColor(); const cp=document.getElementById('teamColorPicker'); if(cp) cp.value=state.c; }
+    renderPitch(); renderLineupList(); updateLineupCount();
+    showToast('✅ シェアされたラインナップを読み込みました');
+  } catch(e) {}
+}
+
+function showShareModal() {
+  const url = getShareURL();
+  document.getElementById('shareUrlText').value = url;
+  document.getElementById('shareQRImg').src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data='+encodeURIComponent(url);
+  document.getElementById('shareModal').classList.add('open');
+}
+
+function copyShareURL() {
+  const url = document.getElementById('shareUrlText').value;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(()=>showToast('✅ URLをコピーしました！')).catch(()=>fallbackCopy(url));
+  } else { fallbackCopy(url); }
+}
+function fallbackCopy(url) {
+  const ta = document.createElement('textarea'); ta.value=url; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast('✅ URLをコピーしました！');
+}
+
+// ============================================================
+// OPPONENT TOGGLE & TEAM SWITCHING
+// ============================================================
+function toggleOpponent() {
+  opponentEnabled = !opponentEnabled;
+  const awayContainer = document.getElementById('awayContainer');
+  awayContainer.style.display = opponentEnabled ? 'flex' : 'none';
+  document.getElementById('pitchArea').classList.toggle('opponent-mode', opponentEnabled);
+  document.getElementById('teamTabs').classList.toggle('visible', opponentEnabled);
+  const btn = document.getElementById('opponentBtn');
+  btn.classList.toggle('btn-active', opponentEnabled);
+  if (opponentEnabled) {
+    renderTeamPitch('away');
+    showToast('⚔️ 対戦相手ON — AWAYタブで設定できます');
+  } else {
+    if (activeTeam === 'away') setActiveTeam('home');
+    showToast('対戦相手OFF');
+  }
+}
+
+function setActiveTeam(team) {
+  activeTeam = team;
+  document.getElementById('homeTab').classList.toggle('active', team === 'home');
+  document.getElementById('awayTab').classList.toggle('active', team === 'away');
+  document.getElementById('homeContainer').classList.toggle('active-team', team === 'home');
+  document.getElementById('awayContainer').classList.toggle('active-team', team === 'away');
+  // Update formation buttons to show active team's formation
+  const tFormation = team === 'away' ? opponentFormation : currentFormation;
+  document.querySelectorAll('.formation-btn').forEach(b => b.classList.toggle('active', b.textContent === tFormation));
+  renderLineupList();
+  updateLineupCount();
+}
+
+function setActiveTeamClick(team) {
+  if (!opponentEnabled) return;
+  setActiveTeam(team);
+}
+
+// ============================================================
+// PINCH ZOOM (mobile)
+// ============================================================
+let pitchZoom = 1;
+let _pinchDist0 = 0;
+let _pinching = false;
+
+function initPitchZoom() {
+  const area = document.getElementById('pitchArea');
+  area.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      _pinching = true;
+      _pinchDist0 = _getPinchDist(e.touches);
+      e.preventDefault();
+    }
+  }, { passive: false });
+  area.addEventListener('touchmove', e => {
+    if (!_pinching || e.touches.length !== 2) return;
+    e.preventDefault();
+    const dist = _getPinchDist(e.touches);
+    if (_pinchDist0 === 0) { _pinchDist0 = dist; return; }
+    pitchZoom = Math.min(3, Math.max(1, pitchZoom * (dist / _pinchDist0)));
+    _pinchDist0 = dist;
+    _applyPitchZoom();
+  }, { passive: false });
+  area.addEventListener('touchend', e => {
+    if (e.touches.length < 2) { _pinching = false; _pinchDist0 = 0; }
+  });
+  // Double-tap to reset zoom
+  let _lastTap = 0;
+  area.addEventListener('touchend', e => {
+    if (_pinching) return;
+    const now = Date.now();
+    if (now - _lastTap < 300 && e.touches.length === 0) {
+      pitchZoom = 1;
+      _applyPitchZoom();
+    }
+    _lastTap = now;
+  });
+}
+function _getPinchDist(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+function _applyPitchZoom() {
+  ['pitchWrap', 'opponentPitchWrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.transform = `scale(${pitchZoom})`; el.style.transformOrigin = 'center center'; }
+  });
+}
+
+// ============================================================
+// FLIP PITCH
+// ============================================================
+let pitchFlipped = false;
+function flipPitch() {
+  pitchFlipped = !pitchFlipped;
+  const wrap = document.getElementById('pitchWrap');
+  wrap.style.transform = pitchFlipped ? 'scaleY(-1)' : '';
+  document.querySelectorAll('.pp-label,.pp-badge').forEach(el=>{el.style.transform=pitchFlipped?'scaleY(-1)':'';});
+  showToast(pitchFlipped ? '⬆️ 攻撃方向: 上' : '⬇️ 攻撃方向: 下');
+}
+
+</script>
+</body>
+</html>
